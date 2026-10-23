@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rubik's Cube Timer</title>
+<style>
+  :root {
+    --bg: #111111;
+    --text: #ffffff;
+    --ready: #4caf50;
+    --holding: #e53935;
+    --muted: #999999;
+    --panel: rgba(128, 128, 128, 0.15);
+  }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); text-align: center; margin: 0; padding: 20px; min-height: 100vh; }
+  h1 { margin: 0 0 10px; font-size: 1.5rem; }
+  #scramble { font-size: 1.4rem; line-height: 1.5; max-width: 800px; margin: 20px auto; letter-spacing: 1px; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  #time { font-size: 5.5rem; margin: 40px 0 10px; font-variant-numeric: tabular-nums; }
+  #time.ready { color: var(--ready); }
+  #time.holding { color: var(--holding); }
+  #hint { color: var(--muted); margin-bottom: 20px; font-size: 0.95rem; }
+  #stats { color: var(--muted); margin: 20px 0; }
+  button { background: var(--panel); color: var(--text); border: 1px solid var(--muted); padding: 10px 16px; border-radius: 6px; cursor: pointer; margin: 4px; font-size: 0.95rem; }
+  button:hover { border-color: var(--text); }
+  details { max-width: 420px; margin: 20px auto; background: var(--panel); border-radius: 8px; padding: 12px 16px; text-align: left; }
+  summary { cursor: pointer; font-weight: 600; }
+  .row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; gap: 12px; }
+  input[type="color"] { width: 50px; height: 30px; border: 0; background: none; padding: 0; cursor: pointer; }
+  input[type="range"] { width: 150px; }
+  #times { max-width: 320px; margin: 20px auto; text-align: left; padding-left: 30px; }
+  #times li { padding: 4px 0; border-bottom: 1px solid var(--panel); }
+</style>
+</head>
+<body>
+  <h1>Rubik's Cube Timer</h1>
+
+  <div id="scramble"></div>
+  <button id="newScramble">Nieuwe scramble</button>
+
+  <div id="time">0.00</div>
+  <div id="hint">Houd SPATIE ingedrukt tot het groen wordt, laat los om te starten, druk op spatie om te stoppen. (Op telefoon: houd het scherm vast en laat los.)</div>
+  <div id="stats"></div>
+
+  <details>
+    <summary>Instellingen</summary>
+    <div class="row">
+      <label for="hideTime">Verberg tijd tijdens solve</label>
+      <input type="checkbox" id="hideTime">
+    </div>
+    <div class="row">
+      <label for="cBg">Achtergrondkleur</label>
+      <input type="color" id="cBg">
+    </div>
+    <div class="row">
+      <label for="cText">Tekstkleur</label>
+      <input type="color" id="cText">
+    </div>
+    <div class="row">
+      <label for="cReady">Kleur "klaar om te starten"</label>
+      <input type="color" id="cReady">
+    </div>
+    <div class="row">
+      <label for="cHolding">Kleur "vasthouden"</label>
+      <input type="color" id="cHolding">
+    </div>
+    <div class="row">
+      <label for="timeSize">Grootte van de tijd</label>
+      <input type="range" id="timeSize" min="3" max="9" step="0.5">
+    </div>
+    <div class="row">
+      <label>Thema's</label>
+      <span>
+        <button data-theme="dark">Donker</button>
+        <button data-theme="light">Licht</button>
+        <button data-theme="cube">Cube</button>
+      </span>
+    </div>
+    <button id="resetSettings">Standaardinstellingen</button>
+  </details>
+
+  <button id="clear">Wis alle tijden</button>
+  <ol id="times"></ol>
+
+<script>
+  // ---------- Elementen ----------
+  const timeEl = document.getElementById("time");
+  const listEl = document.getElementById("times");
+  const statsEl = document.getElementById("stats");
+  const scrambleEl = document.getElementById("scramble");
+  const root = document.documentElement;
+
+  // ---------- Opslag (veilig, werkt ook als opslag geblokkeerd is) ----------
+  function load(key, fallback) {
+    try {
+      const v = localStorage.getItem(key);
+      return v === null ? fallback : JSON.parse(v);
+    } catch (e) { return fallback; }
+  }
+  function save(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  }
+
+  // ---------- Scramble ----------
+  const FACES = ["R", "L", "U", "D", "F", "B"];
+  const AXIS = { R: 0, L: 0, U: 1, D: 1, F: 2, B: 2 };
+  const MODS = ["", "'", "2"];
+
+  function generateScramble(length = 20) {
+    const moves = [];
+    while (moves.length < length) {
+      const face = FACES[Math.floor(Math.random() * FACES.length)];
+      const last = moves.length ? moves[moves.length - 1][0] : null;
+      const beforeLast = moves.length > 1 ? moves[moves.length - 2][0] : null;
+      if (face === last) continue; // nooit twee keer dezelfde kant na elkaar
+      // geen drie zetten op dezelfde as (bijv. R L R)
+      if (last && beforeLast && AXIS[face] === AXIS[last] && AXIS[last] === AXIS[beforeLast]) continue;
+      moves.push(face + MODS[Math.floor(Math.random() * MODS.length)]);
+    }
+    return moves.join(" ");
+  }
+
+  function newScramble() {
+    scrambleEl.textContent = generateScramble();
+  }
+
+  // ---------- Instellingen ----------
+  const DEFAULTS = {
+    hideTime: false,
+    bg: "#111111",
+    text: "#ffffff",
+    ready: "#4caf50",
+    holding: "#e53935",
+    timeSize: 5.5
+  };
+  const THEMES = {
+    dark:  { bg: "#111111", text: "#ffffff", ready: "#4caf50", holding: "#e53935" },
+    light: { bg: "#f5f5f5", text: "#222222", ready: "#2e7d32", holding: "#c62828" },
+    cube:  { bg: "#0d47a1", text: "#ffffff", ready: "#ffd600", holding: "#ff6d00" }
+  };
+  let settings = Object.assign({}, DEFAULTS, load("settings", {}));
+
+  const inputs = {
+    hideTime: document.getElementById("hideTime"),
+    bg: document.getElementById("cBg"),
+    text: document.getElementById("cText"),
+    ready: document.getElementById("cReady"),
+    holding: document.getElementById("cHolding"),
+    timeSize: document.getElementById("timeSize")
+  };
+
+  function applySettings() {
+    root.style.setProperty("--bg", settings.bg);
+    root.style.setProperty("--text", settings.text);
+    root.style.setProperty("--ready", settings.ready);
+    root.style.setProperty("--holding", settings.holding);
+    timeEl.style.fontSize = settings.timeSize + "rem";
+    inputs.hideTime.checked = settings.hideTime;
+    inputs.bg.value = settings.bg;
+    inputs.text.value = settings.text;
+    inputs.ready.value = settings.ready;
+    inputs.holding.value = settings.holding;
+    inputs.timeSize.value = settings.timeSize;
+    save("settings", settings);
+  }
+
+  inputs.hideTime.addEventListener("change", e => {
+    settings.hideTime = e.target.checked;
+    applySettings();
+    e.target.blur(); // zodat spatie de timer blijft starten
+  });
+  ["bg", "text", "ready", "holding"].forEach(k => {
+    inputs[k].addEventListener("input", e => { settings[k] = e.target.value; applySettings(); });
+  });
+  inputs.timeSize.addEventListener("input", e => {
+    settings.timeSize = parseFloat(e.target.value);
+    applySettings();
+  });
+  document.querySelectorAll("[data-theme]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      Object.assign(settings, THEMES[btn.dataset.theme]);
+      applySettings();
+      btn.blur();
+    });
+  });
+  document.getElementById("resetSettings").addEventListener("click", e => {
+    settings = Object.assign({}, DEFAULTS);
+    applySettings();
+    e.target.blur();
+  });
+
+  // ---------- Timer ----------
+  let state = "idle"; // idle, holding, ready, running
+  let startTime = 0, raf = null, holdTimer = null;
+  let solves = load("solves", []);
+
+  function fmt(ms) { return (ms / 1000).toFixed(2); }
+
+  function render() {
+    listEl.innerHTML = "";
+    solves.slice().reverse().forEach(t => {
+      const li = document.createElement("li");
+      li.textContent = fmt(t) + " s";
+      listEl.appendChild(li);
+    });
+    if (solves.length) {
+      const best = Math.min(...solves);
+      const avg = solves.reduce((a, b) => a + b, 0) / solves.length;
+      statsEl.textContent = "Beste: " + fmt(best) + " s  |  Gemiddeld: " + fmt(avg) + " s  |  Aantal: " + solves.length;
+    } else {
+      statsEl.textContent = "";
+    }
+  }
+
+  function tick() {
+    if (settings.hideTime) {
+      timeEl.textContent = "Solving...";
+    } else {
+      timeEl.textContent = fmt(performance.now() - startTime);
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  function press() {
+    if (state === "running") {
+      cancelAnimationFrame(raf);
+      const t = performance.now() - startTime;
+      timeEl.textContent = fmt(t);
+      solves.push(t);
+      save("solves", solves);
+      state = "idle";
+      render();
+      newScramble(); // nieuwe scramble na elke solve
+    } else if (state === "idle") {
+      state = "holding";
+      timeEl.className = "holding";
+      holdTimer = setTimeout(() => {
+        state = "ready";
+        timeEl.className = "ready";
+      }, 400);
+    }
+  }
+
+  function release() {
+    if (state === "ready") {
+      timeEl.className = "";
+      state = "running";
+      startTime = performance.now();
+      tick();
+    } else if (state === "holding") {
+      clearTimeout(holdTimer);
+      timeEl.className = "";
+      state = "idle";
+    }
+  }
+
+  // Laat bediening van knoppen en instellingen met rust
+  function isControl(el) {
+    return el.closest && el.closest("button, input, label, summary, details");
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space" && !e.repeat && !isControl(e.target)) { e.preventDefault(); press(); }
+  });
+  document.addEventListener("keyup", e => {
+    if (e.code === "Space" && !isControl(e.target)) { e.preventDefault(); release(); }
+  });
+  document.addEventListener("touchstart", e => {
+    if (!isControl(e.target)) { e.preventDefault(); press(); }
+  }, { passive: false });
+  document.addEventListener("touchend", e => {
+    if (!isControl(e.target)) { e.preventDefault(); release(); }
+  }, { passive: false });
+
+  document.getElementById("newScramble").addEventListener("click", e => {
+    if (state === "idle") newScramble();
+    e.target.blur();
+  });
+  document.getElementById("clear").addEventListener("click", e => {
+    solves = [];
+    save("solves", solves);
+    timeEl.textContent = "0.00";
+    render();
+    e.target.blur();
+  });
+
+  // ---------- Start ----------
+  applySettings();
+  newScramble();
+  render();
+</script>
+</body>
+</html>
