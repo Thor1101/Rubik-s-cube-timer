@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rubik's Cube Timer</title>
+<title>Cube Timer</title>
 <style>
   :root {
     --bg: #111111;
@@ -12,96 +12,144 @@
     --holding: #e53935;
     --muted: #999999;
     --panel: rgba(128, 128, 128, 0.15);
+    --line: rgba(128, 128, 128, 0.3);
+    --sidebar-w: 290px;
   }
   * { box-sizing: border-box; }
-  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); text-align: center; margin: 0; padding: 20px; min-height: 100vh; }
-  h1 { margin: 0 0 10px; font-size: 1.5rem; }
-  #scramble { font-size: 1.4rem; line-height: 1.5; max-width: 800px; margin: 20px auto; letter-spacing: 1px; font-family: ui-monospace, Menlo, Consolas, monospace; }
-  #cube { position: fixed; right: 16px; bottom: 16px; width: min(170px, 40vw); }
-  #cube svg { width: 100%; height: auto; display: block; }
+  html, body { margin: 0; }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); text-align: center;
+         padding: 20px 20px 20px calc(var(--sidebar-w) + 40px); min-height: 100vh; }
+  button { background: var(--panel); color: var(--text); border: 1px solid var(--muted); padding: 10px 16px; border-radius: 6px; cursor: pointer; margin: 4px; font-size: 0.95rem; }
+  button:hover { border-color: var(--text); }
+
+  /* Titel = gekozen puzzel */
+  #titleWrap { position: relative; display: inline-block; margin: 6px 0 10px; }
+  h1 { margin: 0; }
+  #puzzleBtn { font-size: 1.8rem; font-weight: 700; background: none; border: 1px solid transparent; padding: 4px 14px; border-radius: 8px; margin: 0; }
+  #puzzleBtn:hover { border-color: var(--muted); }
+  #puzzleMenu { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); z-index: 30; min-width: 190px;
+                background: var(--bg); border: 1px solid var(--muted); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; }
+  #puzzleMenu[hidden] { display: none; }
+  #puzzleMenu button { text-align: left; margin: 2px 0; border-color: transparent; background: none; }
+  #puzzleMenu button:hover { background: var(--panel); }
+  #puzzleMenu button.on { background: var(--panel); font-weight: 700; }
+
+  /* Scramble en tijd */
+  #scramble { font-size: 1.4rem; line-height: 1.5; max-width: 800px; margin: 20px auto; letter-spacing: 1px;
+              font-family: ui-monospace, Menlo, Consolas, monospace; white-space: pre-line; }
+  #scramble.long { font-size: 1.1rem; letter-spacing: 0; }
   #time { font-size: 5.5rem; margin: 30px 0 10px; font-variant-numeric: tabular-nums; }
   #time.ready { color: var(--ready); }
   #time.holding { color: var(--holding); }
-  #stats { color: var(--muted); margin: 20px auto; max-width: 600px; line-height: 1.6; }
-  button { background: var(--panel); color: var(--text); border: 1px solid var(--muted); padding: 10px 16px; border-radius: 6px; cursor: pointer; margin: 4px; font-size: 0.95rem; }
-  button:hover { border-color: var(--text); }
-  details { position: fixed; top: 12px; right: 12px; z-index: 10; text-align: left; }
-  summary { display: block; width: fit-content; margin-left: auto; list-style: none; cursor: pointer; user-select: none;
-            font-size: 0.8rem; padding: 6px 12px; border: 1px solid var(--muted); border-radius: 6px; background: var(--panel); color: var(--text); }
+
+  /* 2D afbeelding rechtsonder */
+  #cube { position: fixed; right: 16px; bottom: 16px; width: min(170px, 40vw); }
+  #cube svg { width: 100%; height: auto; display: block; }
+
+  /* Balk links */
+  #side { position: fixed; left: 12px; top: 12px; bottom: 12px; width: var(--sidebar-w); display: flex; flex-direction: column; gap: 10px; text-align: left; z-index: 5; }
+  #bar { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border-radius: 10px; padding: 12px; }
+  #stats { flex: none; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .stat { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; padding: 2px 0; font-variant-numeric: tabular-nums; }
+  .stat span:first-child { color: var(--muted); }
+  #times { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding-left: 34px; }
+  #times li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .solveRow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .solveTime { flex: 1 0 100%; font-weight: 600; font-variant-numeric: tabular-nums; }
+  #times button { padding: 2px 7px; font-size: 0.75rem; margin: 0; }
+  #times button.on { background: var(--text); color: var(--bg); }
+  .scrambleBox { margin: 8px 0 2px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8rem; line-height: 1.6; color: var(--muted); white-space: pre-line; }
+  .scrambleBox button { display: block; margin-top: 8px; }
+  #clear { flex: none; width: 100%; margin: 10px 0 0; font-size: 0.85rem; padding: 8px; }
+
+  /* Instellingen: vierkante knop boven de balk */
+  details { position: relative; flex: none; width: 44px; }
+  summary { list-style: none; cursor: pointer; user-select: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; border: 1px solid var(--muted); border-radius: 8px; background: var(--panel); color: var(--text); }
   summary::-webkit-details-marker { display: none; }
   summary:hover { border-color: var(--text); }
-  .panel { width: 320px; max-width: calc(100vw - 24px); max-height: 80vh; overflow-y: auto; margin-top: 6px;
+  .panel { position: absolute; top: 50px; left: 0; z-index: 40; width: 320px; max-width: calc(100vw - 24px); max-height: calc(100vh - 80px); overflow-y: auto;
            padding: 4px 14px 12px; background: var(--bg); border: 1px solid var(--muted); border-radius: 8px; font-size: 0.9rem; }
   .panel button { padding: 6px 10px; font-size: 0.85rem; }
   .row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin: 12px 0; gap: 8px 12px; }
   input[type="color"] { width: 50px; height: 30px; border: 0; background: none; padding: 0; cursor: pointer; }
   input[type="range"] { width: 150px; }
-  #times { max-width: 440px; margin: 20px auto 150px; text-align: left; padding-left: 40px; }
-  #times li { padding: 8px 0; border-bottom: 1px solid var(--panel); }
-  .solveRow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .solveTime { flex: 1 1 120px; font-variant-numeric: tabular-nums; }
-  #times button { padding: 3px 8px; font-size: 0.8rem; margin: 0; }
-  #times button.on { background: var(--text); color: var(--bg); }
-  .scrambleBox { margin: 8px 0 2px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85rem; line-height: 1.6; color: var(--muted); }
-  .scrambleBox button { display: block; margin-top: 8px; }
+
+  /* Smal scherm (telefoon): balk onder de timer */
+  @media (max-width: 800px) {
+    body { padding: 16px; }
+    #side { position: static; width: auto; max-width: 440px; margin: 24px auto 0; }
+    #times { max-height: 50vh; }
+    .panel { position: fixed; top: 12px; left: 12px; right: 12px; width: auto; max-height: calc(100vh - 24px); }
+    #cube { width: min(130px, 35vw); }
+  }
 </style>
 </head>
 <body>
-  <h1>Rubik's Cube Timer</h1>
+  <main id="main">
+    <div id="titleWrap">
+      <h1><button id="puzzleBtn" aria-haspopup="true" title="Kies een puzzel"></button></h1>
+      <div id="puzzleMenu" hidden></div>
+    </div>
 
-  <div id="scramble"></div>
-  <button id="newScramble">Nieuwe scramble</button>
+    <div id="scramble"></div>
+    <button id="newScramble">Nieuwe scramble</button>
+
+    <div id="time">0.00</div>
+  </main>
 
   <div id="cube"></div>
 
-  <div id="time">0.00</div>
-  <div id="stats"></div>
+  <aside id="side">
+    <details>
+      <summary title="Instellingen" aria-label="Instellingen">&#9881;</summary>
+      <div class="panel">
+        <div class="row">
+          <label for="inspection">Inspectietijd van 15 seconden</label>
+          <input type="checkbox" id="inspection">
+        </div>
+        <div class="row">
+          <label for="hideTime">Verberg tijd tijdens solve</label>
+          <input type="checkbox" id="hideTime">
+        </div>
+        <div class="row">
+          <label for="cBg">Achtergrondkleur</label>
+          <input type="color" id="cBg">
+        </div>
+        <div class="row">
+          <label for="cText">Tekstkleur</label>
+          <input type="color" id="cText">
+        </div>
+        <div class="row">
+          <label for="cReady">Kleur "klaar om te starten"</label>
+          <input type="color" id="cReady">
+        </div>
+        <div class="row">
+          <label for="cHolding">Kleur "vasthouden"</label>
+          <input type="color" id="cHolding">
+        </div>
+        <div class="row">
+          <label for="timeSize">Grootte van de tijd</label>
+          <input type="range" id="timeSize" min="3" max="9" step="0.5">
+        </div>
+        <div class="row">
+          <label>Thema's</label>
+          <span>
+            <button data-theme="dark">Donker</button>
+            <button data-theme="light">Licht</button>
+            <button data-theme="cube">Cube</button>
+          </span>
+        </div>
+        <button id="resetSettings">Standaardinstellingen</button>
+      </div>
+    </details>
 
-  <details>
-    <summary>&#9881; Instellingen</summary>
-    <div class="panel">
-    <div class="row">
-      <label for="inspection">Inspectietijd van 15 seconden</label>
-      <input type="checkbox" id="inspection">
+    <div id="bar">
+      <div id="stats"></div>
+      <ol id="times" reversed></ol>
+      <button id="clear">Wis alle tijden</button>
     </div>
-    <div class="row">
-      <label for="hideTime">Verberg tijd tijdens solve</label>
-      <input type="checkbox" id="hideTime">
-    </div>
-    <div class="row">
-      <label for="cBg">Achtergrondkleur</label>
-      <input type="color" id="cBg">
-    </div>
-    <div class="row">
-      <label for="cText">Tekstkleur</label>
-      <input type="color" id="cText">
-    </div>
-    <div class="row">
-      <label for="cReady">Kleur "klaar om te starten"</label>
-      <input type="color" id="cReady">
-    </div>
-    <div class="row">
-      <label for="cHolding">Kleur "vasthouden"</label>
-      <input type="color" id="cHolding">
-    </div>
-    <div class="row">
-      <label for="timeSize">Grootte van de tijd</label>
-      <input type="range" id="timeSize" min="3" max="9" step="0.5">
-    </div>
-    <div class="row">
-      <label>Thema's</label>
-      <span>
-        <button data-theme="dark">Donker</button>
-        <button data-theme="light">Licht</button>
-        <button data-theme="cube">Cube</button>
-      </span>
-    </div>
-    <button id="resetSettings">Standaardinstellingen</button>
-    </div>
-  </details>
-
-  <button id="clear">Wis alle tijden</button>
-  <ol id="times" reversed></ol>
+  </aside>
 
 <script>
   // ---------- Elementen ----------
@@ -110,6 +158,8 @@
   const statsEl = document.getElementById("stats");
   const scrambleEl = document.getElementById("scramble");
   const cubeEl = document.getElementById("cube");
+  const puzzleBtn = document.getElementById("puzzleBtn");
+  const puzzleMenu = document.getElementById("puzzleMenu");
   const root = document.documentElement;
 
   // ---------- Opslag (veilig, werkt ook als opslag geblokkeerd is) ----------
@@ -123,50 +173,99 @@
     try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
   }
 
-  // ---------- Scramble ----------
-  const FACES = ["R", "L", "U", "D", "F", "B"];
+  // ---------- Puzzels ----------
+  // n = aantal lagen per kant (voor de 2D afbeelding); 0 = geen afbeelding beschikbaar
+  const PUZZLES = {
+    "333":  { name: "3x3x3",    n: 3 },
+    "222":  { name: "2x2x2",    n: 2 },
+    "444":  { name: "4x4x4",    n: 4 },
+    "mega": { name: "Megaminx", n: 0 },
+    "pyra": { name: "Pyraminx", n: 0 }
+  };
+  let puzzle = load("puzzle", "333");
+  if (!PUZZLES[puzzle]) puzzle = "333";
+
+  // ---------- Scrambles ----------
   const AXIS = { R: 0, L: 0, U: 1, D: 1, F: 2, B: 2 };
   const MODS = ["", "'", "2"];
 
-  function generateScramble(length = 20) {
+  // Scramble voor kubussen: kies zetten uit "names", nooit twee keer dezelfde kant na elkaar
+  function genCubeScramble(names, length) {
     const moves = [];
     while (moves.length < length) {
-      const face = FACES[Math.floor(Math.random() * FACES.length)];
+      const name = names[Math.floor(Math.random() * names.length)];
+      const face = name[0];
       const last = moves.length ? moves[moves.length - 1][0] : null;
       const beforeLast = moves.length > 1 ? moves[moves.length - 2][0] : null;
-      if (face === last) continue; // nooit twee keer dezelfde kant na elkaar
+      if (face === last) continue;
       // geen drie zetten op dezelfde as (bijv. R L R)
       if (last && beforeLast && AXIS[face] === AXIS[last] && AXIS[last] === AXIS[beforeLast]) continue;
-      moves.push(face + MODS[Math.floor(Math.random() * MODS.length)]);
+      moves.push(name + MODS[Math.floor(Math.random() * MODS.length)]);
     }
     return moves.join(" ");
   }
 
-  // ---------- 2D afbeelding van de cube ----------
+  function genPyraScramble() {
+    const faces = ["U", "L", "R", "B"];
+    const moves = [];
+    let last = null;
+    while (moves.length < 10) {
+      const f = faces[Math.floor(Math.random() * faces.length)];
+      if (f === last) continue;
+      last = f;
+      moves.push(f + (Math.random() < 0.5 ? "'" : ""));
+    }
+    ["u", "l", "r", "b"].forEach(t => {
+      if (Math.random() < 0.5) moves.push(t + (Math.random() < 0.5 ? "'" : ""));
+    });
+    return moves.join(" ");
+  }
+
+  // Megaminx (Pochmann-stijl): 7 regels van 10 zetten R/D met ++ of --, plus U of U'
+  function genMegaScramble() {
+    const lines = [];
+    for (let l = 0; l < 7; l++) {
+      const parts = [];
+      for (let i = 0; i < 10; i++) parts.push((i % 2 === 0 ? "R" : "D") + (Math.random() < 0.5 ? "++" : "--"));
+      parts.push(Math.random() < 0.5 ? "U" : "U'");
+      lines.push(parts.join(" "));
+    }
+    return lines.join("\n");
+  }
+
+  function generateScramble(p) {
+    switch (p) {
+      case "222":  return genCubeScramble(["R", "U", "F"], 10);
+      case "444":  return genCubeScramble(["R", "L", "U", "D", "F", "B", "Rw", "Uw", "Fw"], 40);
+      case "mega": return genMegaScramble();
+      case "pyra": return genPyraScramble();
+      default:     return genCubeScramble(["R", "L", "U", "D", "F", "B"], 20);
+    }
+  }
+
+  // ---------- 2D afbeelding van de cube (2x2x2, 3x3x3, 4x4x4) ----------
   // Cube vastgehouden met wit onder en groen voor:
   // boven = geel, onder = wit, voor = groen, achter = blauw, rechts = oranje, links = rood
   const COLORS = { U: "#ffd500", D: "#ffffff", F: "#009b48", B: "#0046ad", R: "#ff5800", L: "#c41e3a" };
   const NORMAL_FACE = { "0,1,0": "U", "0,-1,0": "D", "0,0,1": "F", "0,0,-1": "B", "1,0,0": "R", "-1,0,0": "L" };
-  // Voor elke zet: op welke as en welke laag hij werkt
+  // Voor elke zet: op welke as en aan welke kant (+1 of -1)
   const LAYER = { R: [0, 1], L: [0, -1], U: [1, 1], D: [1, -1], F: [2, 1], B: [2, -1] };
 
-  // 54 stickers: positie (x, y, z) en richting (normaal) van elk sticker
-  function solvedStickers() {
+  // Stickers van een n x n x n kubus. Posities lopen van -(n-1) tot n-1 in stappen van 2.
+  function solvedStickers(n) {
+    const vals = [];
+    for (let i = 0; i < n; i++) vals.push(2 * i - (n - 1));
     const stickers = [];
-    for (let x = -1; x <= 1; x++) {
-      for (let y = -1; y <= 1; y++) {
-        for (let z = -1; z <= 1; z++) {
-          const pos = [x, y, z];
-          for (let axis = 0; axis < 3; axis++) {
-            if (pos[axis] !== 0) {
-              const n = [0, 0, 0];
-              n[axis] = pos[axis];
-              stickers.push({ pos: pos.slice(), n: n, color: COLORS[NORMAL_FACE[n.join(",")]] });
-            }
-          }
+    vals.forEach(x => vals.forEach(y => vals.forEach(z => {
+      const pos = [x, y, z];
+      for (let axis = 0; axis < 3; axis++) {
+        if (Math.abs(pos[axis]) === n - 1) {
+          const nm = [0, 0, 0];
+          nm[axis] = Math.sign(pos[axis]);
+          stickers.push({ pos: pos.slice(), n: nm, color: COLORS[NORMAL_FACE[nm.join(",")]] });
         }
       }
-    }
+    })));
     return stickers;
   }
 
@@ -183,11 +282,20 @@
     }
   }
 
-  function applyMove(stickers, face, turns) {
-    const axis = LAYER[face][0], value = LAYER[face][1];
+  function parseMove(token) {
+    const wide = token[1] === "w";
+    const mod = token[wide ? 2 : 1];
+    const turns = mod === "'" ? 3 : mod === "2" ? 2 : 1;
+    return { face: token[0], wide: wide, turns: turns };
+  }
+
+  function applyMove(stickers, n, face, wide, turns) {
+    const axis = LAYER[face][0], sign = LAYER[face][1];
     for (let i = 0; i < turns; i++) {
       for (const s of stickers) {
-        if (s.pos[axis] === value) {
+        const v = s.pos[axis] * sign;
+        const inLayer = wide ? v >= n - 3 : v === n - 1;
+        if (inLayer) {
           s.pos = rotVec(s.pos, face);
           s.n = rotVec(s.n, face);
         }
@@ -195,36 +303,41 @@
     }
   }
 
-  function parseMove(token) {
-    const turns = token[1] === "'" ? 3 : token[1] === "2" ? 2 : 1;
-    return [token[0], turns];
-  }
-
   // Op welke plek in het kruisvormige plaatje (kolom, rij) hoort een sticker
-  function netCell(s) {
-    const x = s.pos[0], y = s.pos[1], z = s.pos[2];
+  function netCell(s, n) {
+    const ix = (s.pos[0] + n - 1) / 2;
+    const iy = (s.pos[1] + n - 1) / 2;
+    const iz = (s.pos[2] + n - 1) / 2;
+    const fy = n - 1 - iy; // rij binnen een zijvlak (boven = 0)
     switch (NORMAL_FACE[s.n.join(",")]) {
-      case "U": return [3 + (x + 1), 0 + (z + 1)];
-      case "L": return [0 + (z + 1), 3 + (1 - y)];
-      case "F": return [3 + (x + 1), 3 + (1 - y)];
-      case "R": return [6 + (1 - z), 3 + (1 - y)];
-      case "B": return [9 + (1 - x), 3 + (1 - y)];
-      case "D": return [3 + (x + 1), 6 + (1 - z)];
+      case "U": return [n + ix, iz];
+      case "L": return [iz, n + fy];
+      case "F": return [n + ix, n + fy];
+      case "R": return [2 * n + (n - 1 - iz), n + fy];
+      case "B": return [3 * n + (n - 1 - ix), n + fy];
+      case "D": return [n + ix, 2 * n + (n - 1 - iz)];
     }
   }
 
   function renderCube(scramble) {
-    const stickers = solvedStickers();
-    scramble.split(" ").filter(Boolean).forEach(tok => {
+    const n = PUZZLES[puzzle].n;
+    if (!n) { // megaminx en pyraminx: geen afbeelding
+      cubeEl.innerHTML = "";
+      cubeEl.style.display = "none";
+      return;
+    }
+    cubeEl.style.display = "";
+    const stickers = solvedStickers(n);
+    scramble.split(/\s+/).filter(Boolean).forEach(tok => {
       const m = parseMove(tok);
-      applyMove(stickers, m[0], m[1]);
+      applyMove(stickers, n, m.face, m.wide, m.turns);
     });
-    const S = 20;
-    let svg = '<svg viewBox="0 0 ' + (12 * S) + ' ' + (9 * S) + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cube na de scramble">';
+    const S = 60 / n; // totale breedte blijft gelijk voor elke maat
+    let svg = '<svg viewBox="0 0 ' + (12 * n * S) + ' ' + (9 * n * S) + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cube na de scramble">';
     stickers.forEach(s => {
-      const c = netCell(s);
-      svg += '<rect x="' + (c[0] * S + 1) + '" y="' + (c[1] * S + 1) + '" width="' + (S - 2) + '" height="' + (S - 2) +
-             '" rx="3" fill="' + s.color + '" stroke="#000" stroke-width="1.2"/>';
+      const c = netCell(s, n);
+      svg += '<rect x="' + (c[0] * S + 0.5) + '" y="' + (c[1] * S + 0.5) + '" width="' + (S - 1) + '" height="' + (S - 1) +
+             '" rx="' + (S * 0.15) + '" fill="' + s.color + '" stroke="#000" stroke-width="' + (S * 0.06) + '"/>';
     });
     svg += "</svg>";
     cubeEl.innerHTML = svg;
@@ -235,11 +348,12 @@
   function setScramble(scr) {
     currentScramble = scr;
     scrambleEl.textContent = scr;
+    scrambleEl.className = scr.length > 60 ? "long" : "";
     renderCube(scr);
   }
 
   function newScramble() {
-    setScramble(generateScramble());
+    setScramble(generateScramble(puzzle));
   }
 
   // ---------- Instellingen ----------
@@ -289,7 +403,7 @@
     inputs[k].addEventListener("change", e => {
       settings[k] = e.target.checked;
       applySettings();
-      e.target.blur(); // zodat spatie de timer blijft bedienen
+      e.target.blur();
     });
   });
   ["bg", "text", "ready", "holding"].forEach(k => {
@@ -312,16 +426,26 @@
     e.target.blur();
   });
 
-  // ---------- Tijden en Ao5 ----------
-  // Elke solve: { ms, plus2, dnf }. Oude opgeslagen tijden (alleen getallen) worden omgezet.
-  let solves = load("solves", []).map(s =>
-    typeof s === "number" ? { ms: s, plus2: false, dnf: false } : s
-  );
+  // ---------- Tijden en Ao5 (per puzzel apart bewaard) ----------
+  // Elke solve: { ms, plus2, dnf, scramble }. Oude opgeslagen tijden (alleen getallen) worden omgezet.
+  function solvesKey(p) { return p === "333" ? "solves" : "solves_" + p; }
+  function loadSolves(p) {
+    return load(solvesKey(p), []).map(s =>
+      typeof s === "number" ? { ms: s, plus2: false, dnf: false } : s
+    );
+  }
+  function saveSolves() { save(solvesKey(puzzle), solves); }
+  let solves = loadSolves(puzzle);
+  let openIdx = null; // welke solve heeft zijn scramble uitgeklapt
 
   function eff(s) { return s.dnf ? Infinity : s.ms + (s.plus2 ? 2000 : 0); }
   function fmt(ms) { return (ms / 1000).toFixed(2); }
   function fmtVal(v) { return v === Infinity ? "DNF" : fmt(v); }
   function fmtSolve(s) { return s.dnf ? "DNF" : fmt(eff(s)) + (s.plus2 ? " (+2)" : ""); }
+  function fmtLabel(s) {
+    if (s.dnf) return "DNF" + (s.ms > 0 ? " (" + fmt(s.ms) + ")" : "");
+    return fmt(eff(s)) + " s" + (s.plus2 ? " (+2)" : "");
+  }
 
   // Ao5 van de 5 solves die eindigen op index "end": beste en slechtste vallen weg,
   // gemiddelde van de 3 overige. Bij 2 of meer DNF's is het resultaat DNF.
@@ -329,13 +453,6 @@
     const vals = solves.slice(end - 4, end + 1).map(eff).sort((a, b) => a - b);
     if (vals[3] === Infinity) return Infinity;
     return (vals[1] + vals[2] + vals[3]) / 3;
-  }
-
-  let openIdx = null; // welke solve heeft zijn scramble uitgeklapt
-
-  function fmtLabel(s) {
-    if (s.dnf) return "DNF" + (s.ms > 0 ? " (" + fmt(s.ms) + ")" : "");
-    return fmt(eff(s)) + " s" + (s.plus2 ? " (+2)" : "");
   }
 
   function mkBtn(text, action, index, on, title) {
@@ -379,29 +496,41 @@
     }
   }
 
-  function render() {
-    renderList();
-    if (!solves.length) { statsEl.textContent = ""; return; }
+  function statRow(label, value) {
+    const row = document.createElement("div");
+    row.className = "stat";
+    const a = document.createElement("span");
+    a.textContent = label;
+    const b = document.createElement("span");
+    b.textContent = value;
+    row.appendChild(a);
+    row.appendChild(b);
+    return row;
+  }
 
+  function renderStats() {
+    statsEl.innerHTML = "";
     const finite = solves.map(eff).filter(v => v !== Infinity);
-    const parts = [];
-    parts.push("Beste: " + (finite.length ? fmt(Math.min(...finite)) + " s" : "-"));
-
+    const mean = finite.length ? fmt(finite.reduce((a, b) => a + b, 0) / finite.length) + " s" : "-";
+    const best = finite.length ? fmt(Math.min(...finite)) + " s" : "-";
+    let ao5 = "-", bestAo5 = "-";
     if (solves.length >= 5) {
       const current = ao5At(solves.length - 1);
-      let bestAo5 = Infinity;
-      for (let i = 4; i < solves.length; i++) bestAo5 = Math.min(bestAo5, ao5At(i));
-      parts.push("Ao5: " + fmtVal(current) + (current === Infinity ? "" : " s"));
-      parts.push("Beste Ao5: " + fmtVal(bestAo5) + (bestAo5 === Infinity ? "" : " s"));
-    } else {
-      parts.push("Ao5: - (nog " + (5 - solves.length) + " solves)");
+      let b = Infinity;
+      for (let i = 4; i < solves.length; i++) b = Math.min(b, ao5At(i));
+      ao5 = current === Infinity ? "DNF" : fmt(current) + " s";
+      bestAo5 = b === Infinity ? "DNF" : fmt(b) + " s";
     }
+    statsEl.appendChild(statRow("Gemiddeld", mean));
+    statsEl.appendChild(statRow("Beste tijd", best));
+    statsEl.appendChild(statRow("Ao5", ao5));
+    statsEl.appendChild(statRow("Beste Ao5", bestAo5));
+    statsEl.appendChild(statRow("Aantal solves", String(solves.length)));
+  }
 
-    if (finite.length) {
-      parts.push("Gemiddeld: " + fmt(finite.reduce((a, b) => a + b, 0) / finite.length) + " s");
-    }
-    parts.push("Aantal: " + solves.length);
-    statsEl.textContent = parts.join("  |  ");
+  function render() {
+    renderList();
+    renderStats();
   }
 
   // ---------- Timer ----------
@@ -440,7 +569,7 @@
     state = "idle";
     timeEl.className = "";
     solves.push({ ms: 0, plus2: false, dnf: true, scramble: currentScramble });
-    save("solves", solves);
+    saveSolves();
     timeEl.textContent = "DNF";
     render();
     newScramble();
@@ -460,7 +589,7 @@
     const t = performance.now() - startTime;
     const solve = { ms: t, plus2: penalty > 0, dnf: false, scramble: currentScramble };
     solves.push(solve);
-    save("solves", solves);
+    saveSolves();
     state = "idle";
     timeEl.textContent = fmtSolve(solve);
     render();
@@ -497,9 +626,9 @@
     }
   }
 
-  // Aanraking van knoppen, instellingen en de lijst start de timer niet (en blokkeert scrollen niet)
+  // Aanraking van de balk, knoppen en instellingen start de timer niet (en blokkeert scrollen niet)
   function isControl(el) {
-    return el.closest && el.closest("button, input, label, summary, details, #times, #stats, #cube");
+    return el.closest && el.closest("button, input, label, summary, details, #side, #cube");
   }
 
   // Spatie is altijd voor de timer: nooit scrollen en nooit per ongeluk een knop indrukken
@@ -522,7 +651,14 @@
     release();
   }, keyOpts);
 
-  // Acties bij vorige tijden: +2, DNF, scramble bekijken, opnieuw doen, verwijderen
+  document.addEventListener("touchstart", e => {
+    if (!isControl(e.target)) { e.preventDefault(); press(); }
+  }, { passive: false });
+  document.addEventListener("touchend", e => {
+    if (!isControl(e.target)) { e.preventDefault(); release(); }
+  }, { passive: false });
+
+  // ---------- Acties bij vorige tijden ----------
   function refreshAfterEdit() {
     render();
     if (state === "idle") {
@@ -550,7 +686,7 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    save("solves", solves);
+    saveSolves();
     refreshAfterEdit();
   }
 
@@ -559,28 +695,70 @@
     if (!b || !b.dataset.action) return;
     handleSolveAction(b.dataset.action, parseInt(b.dataset.index, 10));
   });
-  document.addEventListener("touchstart", e => {
-    if (!isControl(e.target)) { e.preventDefault(); press(); }
-  }, { passive: false });
-  document.addEventListener("touchend", e => {
-    if (!isControl(e.target)) { e.preventDefault(); release(); }
-  }, { passive: false });
 
   document.getElementById("newScramble").addEventListener("click", e => {
     if (state === "idle") newScramble();
     e.target.blur();
   });
   document.getElementById("clear").addEventListener("click", e => {
+    e.target.blur();
+    if (!solves.length) return;
+    if (!confirm("Alle tijden van " + PUZZLES[puzzle].name + " wissen?")) return;
     solves = [];
     openIdx = null;
-    save("solves", solves);
+    saveSolves();
     timeEl.textContent = "0.00";
     render();
+  });
+
+  // ---------- Puzzel kiezen ----------
+  function updateTitle() {
+    puzzleBtn.textContent = PUZZLES[puzzle].name + " \u25BE";
+    document.title = PUZZLES[puzzle].name + " Timer";
+  }
+
+  function buildMenu() {
+    puzzleMenu.innerHTML = "";
+    Object.keys(PUZZLES).forEach(key => {
+      const b = document.createElement("button");
+      b.textContent = PUZZLES[key].name;
+      b.dataset.puzzle = key;
+      if (key === puzzle) b.className = "on";
+      puzzleMenu.appendChild(b);
+    });
+  }
+  function openMenu() { buildMenu(); puzzleMenu.hidden = false; }
+  function closeMenu() { puzzleMenu.hidden = true; }
+
+  function switchPuzzle(p) {
+    closeMenu();
+    if (state !== "idle" || !PUZZLES[p] || p === puzzle) return;
+    puzzle = p;
+    save("puzzle", puzzle);
+    solves = loadSolves(puzzle);
+    openIdx = null;
+    timeEl.className = "";
+    timeEl.textContent = solves.length ? fmtSolve(solves[solves.length - 1]) : "0.00";
+    updateTitle();
+    render();
+    newScramble();
+  }
+
+  puzzleBtn.addEventListener("click", e => {
+    if (puzzleMenu.hidden) openMenu(); else closeMenu();
     e.target.blur();
+  });
+  puzzleMenu.addEventListener("click", e => {
+    const b = e.target.closest ? e.target.closest("button") : null;
+    if (b && b.dataset.puzzle) switchPuzzle(b.dataset.puzzle);
+  });
+  document.addEventListener("click", e => {
+    if (!e.target.closest || !e.target.closest("#titleWrap")) closeMenu();
   });
 
   // ---------- Start ----------
   applySettings();
+  updateTitle();
   newScramble();
   render();
 </script>
