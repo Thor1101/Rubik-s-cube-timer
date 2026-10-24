@@ -36,8 +36,14 @@
   .row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin: 12px 0; gap: 8px 12px; }
   input[type="color"] { width: 50px; height: 30px; border: 0; background: none; padding: 0; cursor: pointer; }
   input[type="range"] { width: 150px; }
-  #times { max-width: 320px; margin: 20px auto; text-align: left; padding-left: 40px; }
-  #times li { padding: 4px 0; border-bottom: 1px solid var(--panel); }
+  #times { max-width: 440px; margin: 20px auto 150px; text-align: left; padding-left: 40px; }
+  #times li { padding: 8px 0; border-bottom: 1px solid var(--panel); }
+  .solveRow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .solveTime { flex: 1 1 120px; font-variant-numeric: tabular-nums; }
+  #times button { padding: 3px 8px; font-size: 0.8rem; margin: 0; }
+  #times button.on { background: var(--text); color: var(--bg); }
+  .scrambleBox { margin: 8px 0 2px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85rem; line-height: 1.6; color: var(--muted); }
+  .scrambleBox button { display: block; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -224,10 +230,16 @@
     cubeEl.innerHTML = svg;
   }
 
-  function newScramble() {
-    const scr = generateScramble();
+  let currentScramble = "";
+
+  function setScramble(scr) {
+    currentScramble = scr;
     scrambleEl.textContent = scr;
     renderCube(scr);
+  }
+
+  function newScramble() {
+    setScramble(generateScramble());
   }
 
   // ---------- Instellingen ----------
@@ -319,13 +331,56 @@
     return (vals[1] + vals[2] + vals[3]) / 3;
   }
 
-  function render() {
+  let openIdx = null; // welke solve heeft zijn scramble uitgeklapt
+
+  function fmtLabel(s) {
+    if (s.dnf) return "DNF" + (s.ms > 0 ? " (" + fmt(s.ms) + ")" : "");
+    return fmt(eff(s)) + " s" + (s.plus2 ? " (+2)" : "");
+  }
+
+  function mkBtn(text, action, index, on, title) {
+    const b = document.createElement("button");
+    b.textContent = text;
+    b.dataset.action = action;
+    b.dataset.index = String(index);
+    if (on) b.className = "on";
+    if (title) b.title = title;
+    return b;
+  }
+
+  function renderList() {
     listEl.innerHTML = "";
-    solves.slice().reverse().forEach(s => {
+    for (let i = solves.length - 1; i >= 0; i--) {
+      const s = solves[i];
       const li = document.createElement("li");
-      li.textContent = fmtSolve(s) + " s".replace(" s", s.dnf ? "" : " s");
+      const row = document.createElement("div");
+      row.className = "solveRow";
+      const label = document.createElement("span");
+      label.className = "solveTime";
+      label.textContent = fmtLabel(s);
+      row.appendChild(label);
+      row.appendChild(mkBtn("+2", "plus2", i, s.plus2, "Voeg 2 seconden straf toe"));
+      row.appendChild(mkBtn("DNF", "dnf", i, s.dnf, "Markeer als DNF"));
+      row.appendChild(mkBtn("Scramble", "scramble", i, openIdx === i, "Bekijk de scramble"));
+      row.appendChild(mkBtn("\u2715", "delete", i, false, "Verwijder deze tijd"));
+      li.appendChild(row);
+      if (openIdx === i) {
+        const box = document.createElement("div");
+        box.className = "scrambleBox";
+        if (s.scramble) {
+          box.appendChild(document.createTextNode(s.scramble));
+          box.appendChild(mkBtn("Opnieuw doen", "redo", i, false));
+        } else {
+          box.textContent = "De scramble van deze tijd is niet bewaard.";
+        }
+        li.appendChild(box);
+      }
       listEl.appendChild(li);
-    });
+    }
+  }
+
+  function render() {
+    renderList();
     if (!solves.length) { statsEl.textContent = ""; return; }
 
     const finite = solves.map(eff).filter(v => v !== Infinity);
@@ -384,7 +439,7 @@
     inspectStart = null;
     state = "idle";
     timeEl.className = "";
-    solves.push({ ms: 0, plus2: false, dnf: true });
+    solves.push({ ms: 0, plus2: false, dnf: true, scramble: currentScramble });
     save("solves", solves);
     timeEl.textContent = "DNF";
     render();
@@ -403,7 +458,7 @@
   function stopSolve() {
     cancelAnimationFrame(raf);
     const t = performance.now() - startTime;
-    const solve = { ms: t, plus2: penalty > 0, dnf: false };
+    const solve = { ms: t, plus2: penalty > 0, dnf: false, scramble: currentScramble };
     solves.push(solve);
     save("solves", solves);
     state = "idle";
@@ -442,16 +497,67 @@
     }
   }
 
-  // Laat bediening van knoppen en instellingen met rust
+  // Aanraking van knoppen, instellingen en de lijst start de timer niet (en blokkeert scrollen niet)
   function isControl(el) {
-    return el.closest && el.closest("button, input, label, summary, details");
+    return el.closest && el.closest("button, input, label, summary, details, #times, #stats, #cube");
   }
 
-  document.addEventListener("keydown", e => {
-    if (e.code === "Space" && !e.repeat && !isControl(e.target)) { e.preventDefault(); press(); }
-  });
-  document.addEventListener("keyup", e => {
-    if (e.code === "Space" && !isControl(e.target)) { e.preventDefault(); release(); }
+  // Spatie is altijd voor de timer: nooit scrollen en nooit per ongeluk een knop indrukken
+  function isSpace(e) { return e.code === "Space" || e.key === " "; }
+  const keyOpts = { capture: true, passive: false };
+  window.addEventListener("keydown", e => {
+    if (!isSpace(e)) return;
+    e.preventDefault();
+    if (e.repeat) return;
+    const a = document.activeElement;
+    if (a && a !== document.body && a.blur) a.blur();
+    press();
+  }, keyOpts);
+  window.addEventListener("keypress", e => {
+    if (isSpace(e)) e.preventDefault();
+  }, keyOpts);
+  window.addEventListener("keyup", e => {
+    if (!isSpace(e)) return;
+    e.preventDefault();
+    release();
+  }, keyOpts);
+
+  // Acties bij vorige tijden: +2, DNF, scramble bekijken, opnieuw doen, verwijderen
+  function refreshAfterEdit() {
+    render();
+    if (state === "idle") {
+      timeEl.textContent = solves.length ? fmtSolve(solves[solves.length - 1]) : "0.00";
+    }
+  }
+
+  function handleSolveAction(action, i) {
+    const s = solves[i];
+    if (!s) return;
+    if (action === "plus2") {
+      s.plus2 = !s.plus2;
+    } else if (action === "dnf") {
+      s.dnf = !s.dnf;
+    } else if (action === "scramble") {
+      openIdx = openIdx === i ? null : i;
+    } else if (action === "delete") {
+      if (!confirm("Deze tijd verwijderen?")) return;
+      solves.splice(i, 1);
+      if (openIdx === i) openIdx = null;
+      else if (openIdx !== null && openIdx > i) openIdx--;
+    } else if (action === "redo") {
+      if (state !== "idle" || !s.scramble) return;
+      setScramble(s.scramble);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    save("solves", solves);
+    refreshAfterEdit();
+  }
+
+  listEl.addEventListener("click", e => {
+    const b = e.target.closest ? e.target.closest("button") : null;
+    if (!b || !b.dataset.action) return;
+    handleSolveAction(b.dataset.action, parseInt(b.dataset.index, 10));
   });
   document.addEventListener("touchstart", e => {
     if (!isControl(e.target)) { e.preventDefault(); press(); }
@@ -466,6 +572,7 @@
   });
   document.getElementById("clear").addEventListener("click", e => {
     solves = [];
+    openIdx = null;
     save("solves", solves);
     timeEl.textContent = "0.00";
     render();
