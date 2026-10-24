@@ -13,7 +13,7 @@
     --muted: #999999;
     --panel: rgba(128, 128, 128, 0.15);
     --line: rgba(128, 128, 128, 0.3);
-    --sidebar-w: 290px;
+    --sidebar-w: 320px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -34,16 +34,22 @@
   #puzzleMenu button:hover { background: var(--panel); }
   #puzzleMenu button.on { background: var(--panel); font-weight: 700; }
 
-  /* Scramble en tijd */
+  /* Scramble, tijd en verschil met vorige solve */
   #scramble { font-size: 1.4rem; line-height: 1.5; max-width: 800px; margin: 20px auto; letter-spacing: 1px;
               font-family: ui-monospace, Menlo, Consolas, monospace; white-space: pre-line; }
   #scramble.long { font-size: 1.1rem; letter-spacing: 0; }
-  #time { font-size: 5.5rem; margin: 30px 0 10px; font-variant-numeric: tabular-nums; }
+  #time { font-size: var(--time-size, 5.5rem); margin: 30px 0 4px; font-variant-numeric: tabular-nums; }
   #time.ready { color: var(--ready); }
   #time.holding { color: var(--holding); }
+  #delta { font-size: 1.8rem; font-weight: 600; min-height: 2.4rem; font-variant-numeric: tabular-nums; }
+  #delta.slower { color: #e53935; }
+  #delta.faster { color: #43a047; }
+  #delta.even { color: var(--muted); }
 
   /* 2D afbeelding rechtsonder */
-  #cube { position: fixed; right: 16px; bottom: 16px; width: min(170px, 40vw); }
+  #cube { position: fixed; right: 16px; bottom: 16px; width: min(230px, 42vw); }
+  #cube.mid { width: min(270px, 48vw); }
+  #cube.wide { width: min(380px, 60vw); }
   #cube svg { width: 100%; height: auto; display: block; }
 
   /* Balk links */
@@ -52,13 +58,13 @@
   #stats { flex: none; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
   .stat { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; padding: 2px 0; font-variant-numeric: tabular-nums; }
   .stat span:first-child { color: var(--muted); }
-  #times { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding-left: 34px; }
-  #times li { padding: 6px 0; border-bottom: 1px solid var(--line); }
-  .solveRow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .solveTime { flex: 1 0 100%; font-weight: 600; font-variant-numeric: tabular-nums; }
-  #times button { padding: 2px 7px; font-size: 0.75rem; margin: 0; }
+  #times { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding-left: 30px; font-size: 0.8rem; }
+  #times li { padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .solveRow { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; }
+  .solveTime { flex: 1 1 auto; min-width: 0; white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
+  #times button { padding: 2px 5px; font-size: 0.65rem; margin: 0; white-space: nowrap; flex: none; }
   #times button.on { background: var(--text); color: var(--bg); }
-  .scrambleBox { margin: 8px 0 2px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8rem; line-height: 1.6; color: var(--muted); white-space: pre-line; }
+  .scrambleBox { margin: 8px 0 2px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.75rem; line-height: 1.6; color: var(--muted); white-space: pre-line; }
   .scrambleBox button { display: block; margin-top: 8px; }
   #clear { flex: none; width: 100%; margin: 10px 0 0; font-size: 0.85rem; padding: 8px; }
 
@@ -81,7 +87,15 @@
     #side { position: static; width: auto; max-width: 440px; margin: 24px auto 0; }
     #times { max-height: 50vh; }
     .panel { position: fixed; top: 12px; left: 12px; right: 12px; width: auto; max-height: calc(100vh - 24px); }
-    #cube { width: min(130px, 35vw); }
+    /* op een telefoon staat de afbeelding rechts van de tijd */
+    #timeRow { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
+    #timeBox { flex: 1 1 auto; min-width: 0; }
+    #time { font-size: calc(var(--time-size, 5.5rem) * 0.55); margin: 10px 0 4px; overflow-wrap: anywhere; }
+    #delta { font-size: 1.3rem; min-height: 1.8rem; }
+    #cube, #cube.mid, #cube.wide { position: static; flex: 0 0 auto; }
+    #cube { width: min(36vw, 170px); }
+    #cube.mid { width: min(40vw, 190px); }
+    #cube.wide { width: min(46vw, 230px); }
   }
 </style>
 </head>
@@ -95,10 +109,14 @@
     <div id="scramble"></div>
     <button id="newScramble">Nieuwe scramble</button>
 
-    <div id="time">0.00</div>
+    <div id="timeRow">
+      <div id="timeBox">
+        <div id="time">0.000</div>
+        <div id="delta"></div>
+      </div>
+      <div id="cube"></div>
+    </div>
   </main>
-
-  <div id="cube"></div>
 
   <aside id="side">
     <details>
@@ -154,6 +172,7 @@
 <script>
   // ---------- Elementen ----------
   const timeEl = document.getElementById("time");
+  const deltaEl = document.getElementById("delta");
   const listEl = document.getElementById("times");
   const statsEl = document.getElementById("stats");
   const scrambleEl = document.getElementById("scramble");
@@ -174,13 +193,12 @@
   }
 
   // ---------- Puzzels ----------
-  // n = aantal lagen per kant (voor de 2D afbeelding); 0 = geen afbeelding beschikbaar
   const PUZZLES = {
-    "333":  { name: "3x3x3",    n: 3 },
-    "222":  { name: "2x2x2",    n: 2 },
-    "444":  { name: "4x4x4",    n: 4 },
-    "mega": { name: "Megaminx", n: 0 },
-    "pyra": { name: "Pyraminx", n: 0 }
+    "333":  { name: "3x3x3",    kind: "cube", n: 3 },
+    "222":  { name: "2x2x2",    kind: "cube", n: 2 },
+    "444":  { name: "4x4x4",    kind: "cube", n: 4 },
+    "mega": { name: "Megaminx", kind: "mega" },
+    "pyra": { name: "Pyraminx", kind: "pyra" }
   };
   let puzzle = load("puzzle", "333");
   if (!PUZZLES[puzzle]) puzzle = "333";
@@ -243,12 +261,29 @@
     }
   }
 
-  // ---------- 2D afbeelding van de cube (2x2x2, 3x3x3, 4x4x4) ----------
+  // ---------- Hulpfuncties voor 3D ----------
+  const vAdd = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+  const vSub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+  const vScale = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+  const vDot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const vCross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const vNorm = a => vScale(a, 1 / Math.sqrt(vDot(a, a)));
+  // Draai punt v om de (eenheids)as k met hoek th (rechterhandregel)
+  function rotAxis(v, k, th) {
+    const c = Math.cos(th), s = Math.sin(th);
+    const kv = vCross(k, v), kd = vDot(k, v);
+    return [
+      v[0] * c + kv[0] * s + k[0] * kd * (1 - c),
+      v[1] * c + kv[1] * s + k[1] * kd * (1 - c),
+      v[2] * c + kv[2] * s + k[2] * kd * (1 - c)
+    ];
+  }
+
+  // ---------- 2D afbeelding: kubussen (2x2x2, 3x3x3, 4x4x4) ----------
   // Cube vastgehouden met wit onder en groen voor:
   // boven = geel, onder = wit, voor = groen, achter = blauw, rechts = oranje, links = rood
   const COLORS = { U: "#ffd500", D: "#ffffff", F: "#009b48", B: "#0046ad", R: "#ff5800", L: "#c41e3a" };
   const NORMAL_FACE = { "0,1,0": "U", "0,-1,0": "D", "0,0,1": "F", "0,0,-1": "B", "1,0,0": "R", "-1,0,0": "L" };
-  // Voor elke zet: op welke as en aan welke kant (+1 of -1)
   const LAYER = { R: [0, 1], L: [0, -1], U: [1, 1], D: [1, -1], F: [2, 1], B: [2, -1] };
 
   // Stickers van een n x n x n kubus. Posities lopen van -(n-1) tot n-1 in stappen van 2.
@@ -308,7 +343,7 @@
     const ix = (s.pos[0] + n - 1) / 2;
     const iy = (s.pos[1] + n - 1) / 2;
     const iz = (s.pos[2] + n - 1) / 2;
-    const fy = n - 1 - iy; // rij binnen een zijvlak (boven = 0)
+    const fy = n - 1 - iy;
     switch (NORMAL_FACE[s.n.join(",")]) {
       case "U": return [n + ix, iz];
       case "L": return [iz, n + fy];
@@ -319,27 +354,314 @@
     }
   }
 
-  function renderCube(scramble) {
-    const n = PUZZLES[puzzle].n;
-    if (!n) { // megaminx en pyraminx: geen afbeelding
-      cubeEl.innerHTML = "";
-      cubeEl.style.display = "none";
-      return;
-    }
-    cubeEl.style.display = "";
+  function cubeSvg(n, scramble) {
     const stickers = solvedStickers(n);
     scramble.split(/\s+/).filter(Boolean).forEach(tok => {
       const m = parseMove(tok);
       applyMove(stickers, n, m.face, m.wide, m.turns);
     });
-    const S = 60 / n; // totale breedte blijft gelijk voor elke maat
+    const S = 60 / n;
     let svg = '<svg viewBox="0 0 ' + (12 * n * S) + ' ' + (9 * n * S) + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cube na de scramble">';
     stickers.forEach(s => {
       const c = netCell(s, n);
       svg += '<rect x="' + (c[0] * S + 0.5) + '" y="' + (c[1] * S + 0.5) + '" width="' + (S - 1) + '" height="' + (S - 1) +
              '" rx="' + (S * 0.15) + '" fill="' + s.color + '" stroke="#000" stroke-width="' + (S * 0.06) + '"/>';
     });
-    svg += "</svg>";
+    return svg + "</svg>";
+  }
+
+  // ---------- 2D afbeelding: Pyraminx ----------
+  // Kleuren: voor groen, links rood, rechts blauw, onder geel. Hoekpunten: U (boven), L, R, B (achter).
+  let PYRA = null;
+  function getPyra() {
+    if (PYRA) return PYRA;
+    const r2 = Math.sqrt(2), r6 = Math.sqrt(6);
+    const V = { U: [0, 1, 0], L: [-r6 / 3, -1 / 3, r2 / 3], R: [r6 / 3, -1 / 3, r2 / 3], B: [0, -1 / 3, -2 * r2 / 3] };
+    const E = 100, H = E * Math.sqrt(3) / 2;
+    // Uitgeklapt plaatje: voorkant in het midden, links en rechts ernaast, onderkant eronder
+    const FACES = [
+      { verts: ["U", "L", "R"], color: "#009b48", p2: [[0, 0], [-0.5 * E, H], [0.5 * E, H]] },
+      { verts: ["U", "L", "B"], color: "#c41e3a", p2: [[0, 0], [-0.5 * E, H], [-E, 0]] },
+      { verts: ["U", "R", "B"], color: "#0046ad", p2: [[0, 0], [0.5 * E, H], [E, 0]] },
+      { verts: ["L", "R", "B"], color: "#ffd500", p2: [[-0.5 * E, H], [0.5 * E, H], [0, 2 * H]] }
+    ];
+    const slots = [];
+    FACES.forEach((f, fi) => {
+      const tris = [];
+      for (let i = 0; i <= 2; i++) for (let j = 0; j <= 2 - i; j++) { const k = 2 - i - j; tris.push([[i + 1, j, k], [i, j + 1, k], [i, j, k + 1]]); }
+      for (let i = 0; i <= 1; i++) for (let j = 0; j <= 1 - i; j++) { const k = 1 - i - j; tris.push([[i + 1, j + 1, k], [i + 1, j, k + 1], [i, j + 1, k + 1]]); }
+      tris.forEach(t => {
+        const vb = t.map(q => q.map(x => x / 3));
+        const bary = [0, 1, 2].map(m => (vb[0][m] + vb[1][m] + vb[2][m]) / 3);
+        let pos = [0, 0, 0];
+        const w = { U: 0, L: 0, R: 0, B: 0 };
+        for (let m = 0; m < 3; m++) {
+          pos = vAdd(pos, vScale(V[f.verts[m]], bary[m]));
+          w[f.verts[m]] = bary[m];
+        }
+        const pts2 = vb.map(q => [0, 1, 2].reduce((acc, m) => [acc[0] + q[m] * f.p2[m][0], acc[1] + q[m] * f.p2[m][1]], [0, 0]));
+        slots.push({ face: fi, pos: pos, w: w, pts2: pts2 });
+      });
+    });
+    PYRA = { V: V, FACES: FACES, slots: slots, E: E, H: H, perms: {}, maxErr: 0,
+             colors: slots.map(s => FACES[s.face].color) };
+    return PYRA;
+  }
+
+  function pyraPerm(P, token) {
+    if (P.perms[token]) return P.perms[token];
+    const letter = token[0];
+    const X = letter.toUpperCase();
+    const tip = letter !== X;
+    const inverse = token[1] === "'";
+    const axis = P.V[X];
+    const ang = (inverse ? 1 : -1) * 120 * Math.PI / 180; // met de klok mee gezien vanaf het hoekpunt
+    const perm = P.slots.map((_, i) => i);
+    P.slots.forEach((s, i) => {
+      if (s.w[X] > (tip ? 0.7 : 0.4)) {
+        const q = rotAxis(s.pos, axis, ang);
+        let best = -1, bd = Infinity;
+        P.slots.forEach((t, j) => { const d = vSub(q, t.pos); const dd = vDot(d, d); if (dd < bd) { bd = dd; best = j; } });
+        P.maxErr = Math.max(P.maxErr, Math.sqrt(bd));
+        perm[i] = best;
+      }
+    });
+    P.perms[token] = perm;
+    return perm;
+  }
+
+  function pyraApply(P, colors, token) {
+    if (!/^[ulrbULRB]'?$/.test(token)) return colors;
+    const perm = pyraPerm(P, token);
+    const out = new Array(colors.length);
+    for (let i = 0; i < colors.length; i++) out[perm[i]] = colors[i];
+    return out;
+  }
+
+  function pyraSvg(scramble) {
+    const P = getPyra();
+    let colors = P.colors.slice();
+    scramble.split(/\s+/).filter(Boolean).forEach(tok => { colors = pyraApply(P, colors, tok); });
+    const E = P.E, H = P.H, pad = 4;
+    let svg = '<svg viewBox="' + (-E - pad) + ' ' + (-pad) + ' ' + (2 * E + 2 * pad) + ' ' + (2 * H + 2 * pad) +
+              '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pyraminx na de scramble">';
+    P.slots.forEach((s, i) => {
+      svg += '<polygon points="' + s.pts2.map(p => p[0].toFixed(2) + "," + p[1].toFixed(2)).join(" ") +
+             '" fill="' + colors[i] + '" stroke="#000" stroke-width="1.6" stroke-linejoin="round"/>';
+    });
+    return svg + "</svg>";
+  }
+
+  // ---------- 2D afbeelding: Megaminx ----------
+  // Zetten (Pochmann): U = bovenste vlak 1/5 draai; R++ / D++ = alles behalve het tegenoverliggende vlak 2/5 draai.
+  // De afbeelding toont de puzzel ten opzichte van de middenstukken (die staan altijd op hun eigen plek).
+  // Uitgeklapt als twee bloemen: boven (U met 5 buren) en onder (D met 5 buren).
+  let MEGA = null;
+  function getMega() {
+    if (MEGA) return MEGA;
+    const rad = Math.PI / 180;
+    const c = 1 / Math.sqrt(5), s = 2 / Math.sqrt(5);
+    const names = ["U", "F", "R", "BR", "BL", "L", "DR", "DBR", "B", "DBL", "DL", "D"];
+    const cols = { U: "#9e9e9e", D: "#ffffff", F: "#00a651", B: "#f48fb1", R: "#d32f2f", DBL: "#81d4fa",
+                   BR: "#fdd835", DL: "#8e24aa", BL: "#1e40af", DR: "#fff59d", L: "#fb8c00", DBR: "#aed581" };
+
+    // Normaalvectoren van de 12 vlakken (U boven, F voor)
+    const N = [[0, 1, 0]];
+    for (let i = 0; i < 5; i++) { const a = i * 72 * rad; N.push([s * Math.sin(a), c, s * Math.cos(a)]); }
+    for (let i = 0; i < 5; i++) { const a = (36 + i * 72) * rad; N.push([s * Math.sin(a), -c, s * Math.cos(a)]); }
+    N.push([0, -1, 0]);
+    const adj = (i, j) => i !== j && Math.abs(vDot(N[i], N[j]) - c) < 1e-6;
+
+    // Hoekpunten: snijpunt van drie onderling aangrenzende vlakken
+    const verts = [];
+    for (let i = 0; i < 12; i++) for (let j = i + 1; j < 12; j++) for (let k = j + 1; k < 12; k++) {
+      if (adj(i, j) && adj(i, k) && adj(j, k)) {
+        verts.push({ p: vScale(vAdd(vAdd(N[i], N[j]), N[k]), 1 / (1 + 2 * c)), f: [i, j, k] });
+      }
+    }
+
+    // Hoekpunten per vlak, tegen de klok in gesorteerd
+    const FV = [];
+    for (let f = 0; f < 12; f++) {
+      const ref = Math.abs(N[f][1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+      const e1 = vNorm(vCross(ref, N[f]));
+      const e2 = vCross(N[f], e1);
+      const idx = [];
+      verts.forEach((v, vi) => { if (v.f.indexOf(f) >= 0) idx.push(vi); });
+      idx.sort((a, b) => {
+        const pa = vSub(verts[a].p, N[f]), pb = vSub(verts[b].p, N[f]);
+        return Math.atan2(vDot(pa, e2), vDot(pa, e1)) - Math.atan2(vDot(pb, e2), vDot(pb, e1));
+      });
+      FV.push(idx);
+    }
+
+    // 11 stickers per vlak: midden (vijfhoek), 5 hoeken (vlieger), 5 randen (trapezium)
+    const slots = [], faceSlots = [];
+    const T_IN = 0.5, S_EDGE = 0.3;
+    for (let f = 0; f < 12; f++) {
+      const fs = [];
+      const center = N[f];
+      const vs = FV[f].map(vi => verts[vi].p);
+      const Q = vs.map(v => vAdd(center, vScale(vSub(v, center), T_IN)));
+      const A = vs.map((v, k) => vAdd(v, vScale(vSub(vs[(k + 1) % 5], v), S_EDGE)));
+      const B = vs.map((v, k) => vAdd(vs[(k + 1) % 5], vScale(vSub(v, vs[(k + 1) % 5]), S_EDGE)));
+      fs.push(slots.length); slots.push({ face: f, kind: "c", pos: center.slice(), poly3: Q });
+      for (let k = 0; k < 5; k++) {
+        fs.push(slots.length);
+        slots.push({ face: f, kind: "k", pos: vAdd(center, vScale(vSub(vs[k], center), 0.7)),
+                     poly3: [Q[k], B[(k + 4) % 5], vs[k], A[k]] });
+      }
+      for (let k = 0; k < 5; k++) {
+        const mid = vScale(vAdd(vs[k], vs[(k + 1) % 5]), 0.5);
+        fs.push(slots.length);
+        slots.push({ face: f, kind: "e", pos: vAdd(center, vScale(vSub(mid, center), 0.65)),
+                     poly3: [Q[k], Q[(k + 1) % 5], B[k], A[k]] });
+      }
+      faceSlots.push(fs);
+    }
+
+    function nearest(p) {
+      let best = -1, bd = Infinity;
+      for (let j = 0; j < slots.length; j++) {
+        const d = vSub(p, slots[j].pos); const dd = vDot(d, d);
+        if (dd < bd) { bd = dd; best = j; }
+      }
+      return [best, Math.sqrt(bd)];
+    }
+
+    // De 26 stickers van het "dek" rond een as: het vlak (11) + 3 per buurvlak (15)
+    function capSet(axis) {
+      const order = slots.map((_, i) => i).sort((a, b) => vDot(slots[b].pos, axis) - vDot(slots[a].pos, axis));
+      return { set: order.slice(0, 26), gap: vDot(slots[order[25]].pos, axis) - vDot(slots[order[26]].pos, axis) };
+    }
+
+    // De middenstukken zitten vast aan de kern en bewegen nooit mee.
+    // R++ draait alles behalve het tegenoverliggende dek 144 graden met de klok mee. Ten opzichte van de
+    // kern (de middenstukken) komt dat neer op: alleen het tegenoverliggende dek draait 144 graden de andere kant op.
+    const MOVES = {
+      "U":   { axis: 0,  ang: -72, opp: false },
+      "U'":  { axis: 0,  ang: 72,  opp: false },
+      "R++": { axis: 2,  ang: 144, opp: true },
+      "R--": { axis: 2,  ang: -144, opp: true },
+      "D++": { axis: 11, ang: 144, opp: true },
+      "D--": { axis: 11, ang: -144, opp: true }
+    };
+
+    MEGA = { N: N, verts: verts, FV: FV, slots: slots, faceSlots: faceSlots, MOVES: MOVES, perms: {}, maxErr: 0,
+             capSet: capSet, names: names,
+             colors: slots.map(sl => cols[names[sl.face]]) };
+
+    MEGA.perm = function (token) {
+      if (MEGA.perms[token]) return MEGA.perms[token];
+      const mv = MOVES[token];
+      const a = N[mv.axis];
+      const region = mv.opp ? capSet(vScale(a, -1)).set : capSet(a).set;
+      const perm = slots.map((_, i) => i);
+      const th = mv.ang * rad; // rechterhandregel om de as van het vlak
+      region.forEach(i => {
+        const r = nearest(rotAxis(slots[i].pos, a, th));
+        MEGA.maxErr = Math.max(MEGA.maxErr, r[1]);
+        perm[i] = r[0];
+      });
+      MEGA.perms[token] = perm;
+      return perm;
+    };
+
+    MEGA.apply = function (colors, token) {
+      if (!MOVES[token]) return colors;
+      const perm = MEGA.perm(token);
+      const out = new Array(colors.length);
+      for (let i = 0; i < colors.length; i++) out[perm[i]] = colors[i];
+      return out;
+    };
+
+    // Plattegrond: bloem rond vlak cf, buren worden langs de gedeelde rand uitgeklapt
+    function flower(cf, u) {
+      const n = N[cf], w = vCross(n, u);
+      const proj = p => [vDot(p, u), -vDot(p, w)];
+      const items = [{ f: cf, T: p => p }];
+      for (let nf = 0; nf < 12; nf++) {
+        if (!adj(cf, nf)) continue;
+        const shared = FV[cf].filter(vi => FV[nf].indexOf(vi) >= 0);
+        const P0 = verts[shared[0]].p;
+        const k = vNorm(vSub(verts[shared[1]].p, P0));
+        const th = Math.acos(c);
+        const sgn = vDot(rotAxis(N[nf], k, th), n) > vDot(rotAxis(N[nf], k, -th), n) ? 1 : -1;
+        items.push({ f: nf, T: p => vAdd(P0, rotAxis(vSub(p, P0), k, sgn * th)) });
+      }
+      const polys = [], pts = {}, sp = {};
+      items.forEach(it => {
+        polys.push(FV[it.f].map(vi => proj(it.T(verts[vi].p))));
+        faceSlots[it.f].forEach(si => {
+          pts[si] = proj(it.T(slots[si].pos));
+          sp[si] = slots[si].poly3.map(q => proj(it.T(q)));
+        });
+      });
+      return { polys: polys, pts: pts, sp: sp };
+    }
+    function bbox(fl) {
+      let b = { minx: Infinity, maxx: -Infinity, miny: Infinity, maxy: -Infinity };
+      fl.polys.forEach(poly => poly.forEach(q => {
+        b.minx = Math.min(b.minx, q[0]); b.maxx = Math.max(b.maxx, q[0]);
+        b.miny = Math.min(b.miny, q[1]); b.maxy = Math.max(b.maxy, q[1]);
+      }));
+      return b;
+    }
+    const f1 = flower(0, [1, 0, 0]);   // boven: voorkant onderaan
+    const f2 = flower(11, [1, 0, 0]);  // onder: voorkant bovenaan
+    const b1 = bbox(f1), b2 = bbox(f2);
+    const R2 = Math.hypot(f1.polys[0][0][0], f1.polys[0][0][1]);
+    const gap = R2 * 0.6;
+    const w1 = b1.maxx - b1.minx, w2 = b2.maxx - b2.minx;
+    const h1 = b1.maxy - b1.miny, h2 = b2.maxy - b2.miny;
+    const Ht = Math.max(h1, h2);
+    const o1 = [-b1.minx, (Ht - h1) / 2 - b1.miny];
+    const o2 = [w1 + gap - b2.minx, (Ht - h2) / 2 - b2.miny];
+    const shift = (q, o) => [q[0] + o[0], q[1] + o[1]];
+    MEGA.polys = [];
+    f1.polys.forEach(p => MEGA.polys.push(p.map(q => shift(q, o1))));
+    f2.polys.forEach(p => MEGA.polys.push(p.map(q => shift(q, o2))));
+    MEGA.slots2d = new Array(slots.length);
+    Object.keys(f1.pts).forEach(si => { MEGA.slots2d[si] = shift(f1.pts[si], o1); });
+    Object.keys(f2.pts).forEach(si => { MEGA.slots2d[si] = shift(f2.pts[si], o2); });
+    MEGA.spolys = new Array(slots.length);
+    Object.keys(f1.sp).forEach(si => { MEGA.spolys[si] = f1.sp[si].map(q => shift(q, o1)); });
+    Object.keys(f2.sp).forEach(si => { MEGA.spolys[si] = f2.sp[si].map(q => shift(q, o2)); });
+    MEGA.W = w1 + gap + w2;
+    MEGA.H = Ht;
+    MEGA.R2 = R2;
+    return MEGA;
+  }
+
+  function megaSvg(scramble) {
+    const M = getMega();
+    let colors = M.colors.slice();
+    scramble.split(/\s+/).filter(Boolean).forEach(tok => { colors = M.apply(colors, tok); });
+    const R = M.R2, pad = R * 0.15;
+    let svg = '<svg viewBox="' + (-pad).toFixed(2) + ' ' + (-pad).toFixed(2) + ' ' + (M.W + 2 * pad).toFixed(2) + ' ' + (M.H + 2 * pad).toFixed(2) +
+              '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Megaminx na de scramble">';
+    const pts = poly => poly.map(p => p[0].toFixed(2) + "," + p[1].toFixed(2)).join(" ");
+    M.spolys.forEach((poly, i) => {
+      svg += '<polygon points="' + pts(poly) + '" fill="' + colors[i] + '" stroke="#000" stroke-width="' +
+             (R * 0.025).toFixed(2) + '" stroke-linejoin="round"/>';
+    });
+    M.polys.forEach(poly => { // dikkere rand om elk vlak
+      svg += '<polygon points="' + pts(poly) + '" fill="none" stroke="#000" stroke-width="' +
+             (R * 0.06).toFixed(2) + '" stroke-linejoin="round"/>';
+    });
+    return svg + "</svg>";
+  }
+
+  // ---------- Afbeelding tonen ----------
+  function renderCube(scramble) {
+    const info = PUZZLES[puzzle];
+    let svg = "";
+    try {
+      if (info.kind === "cube") svg = cubeSvg(info.n, scramble);
+      else if (info.kind === "pyra") svg = pyraSvg(scramble);
+      else svg = megaSvg(scramble);
+    } catch (e) { svg = ""; }
+    cubeEl.className = info.kind === "mega" ? "wide" : info.kind === "pyra" ? "mid" : "";
     cubeEl.innerHTML = svg;
   }
 
@@ -388,7 +710,7 @@
     root.style.setProperty("--text", settings.text);
     root.style.setProperty("--ready", settings.ready);
     root.style.setProperty("--holding", settings.holding);
-    timeEl.style.fontSize = settings.timeSize + "rem";
+    root.style.setProperty("--time-size", settings.timeSize + "rem");
     inputs.hideTime.checked = settings.hideTime;
     inputs.inspection.checked = settings.inspection;
     inputs.bg.value = settings.bg;
@@ -427,7 +749,6 @@
   });
 
   // ---------- Tijden en Ao5 (per puzzel apart bewaard) ----------
-  // Elke solve: { ms, plus2, dnf, scramble }. Oude opgeslagen tijden (alleen getallen) worden omgezet.
   function solvesKey(p) { return p === "333" ? "solves" : "solves_" + p; }
   function loadSolves(p) {
     return load(solvesKey(p), []).map(s =>
@@ -439,7 +760,7 @@
   let openIdx = null; // welke solve heeft zijn scramble uitgeklapt
 
   function eff(s) { return s.dnf ? Infinity : s.ms + (s.plus2 ? 2000 : 0); }
-  function fmt(ms) { return (ms / 1000).toFixed(2); }
+  function fmt(ms) { return (ms / 1000).toFixed(3); }
   function fmtVal(v) { return v === Infinity ? "DNF" : fmt(v); }
   function fmtSolve(s) { return s.dnf ? "DNF" : fmt(eff(s)) + (s.plus2 ? " (+2)" : ""); }
   function fmtLabel(s) {
@@ -533,6 +854,24 @@
     renderStats();
   }
 
+  // Verschil met de vorige solve: rood = trager, groen = sneller
+  function renderDelta() {
+    deltaEl.textContent = "";
+    deltaEl.className = "";
+    if (state !== "idle" || solves.length < 2) return;
+    const last = eff(solves[solves.length - 1]);
+    const prev = eff(solves[solves.length - 2]);
+    if (last === Infinity || prev === Infinity) return;
+    const d = last - prev;
+    if (Math.abs(d) < 0.5) {
+      deltaEl.textContent = "0.000 s";
+      deltaEl.className = "even";
+      return;
+    }
+    deltaEl.textContent = (d > 0 ? "+" : "-") + fmt(Math.abs(d)) + " s";
+    deltaEl.className = d > 0 ? "slower" : "faster";
+  }
+
   // ---------- Timer ----------
   // Toestanden: idle, inspecting, holding, ready, running
   let state = "idle";
@@ -559,6 +898,8 @@
     state = "inspecting";
     inspectStart = performance.now();
     timeEl.className = "";
+    deltaEl.textContent = "";
+    deltaEl.className = "";
     startLoop();
   }
 
@@ -572,12 +913,15 @@
     saveSolves();
     timeEl.textContent = "DNF";
     render();
+    renderDelta();
     newScramble();
   }
 
   function beginHold() {
     state = "holding";
     timeEl.className = "holding";
+    deltaEl.textContent = "";
+    deltaEl.className = "";
     holdTimer = setTimeout(() => {
       state = "ready";
       timeEl.className = "ready";
@@ -593,6 +937,7 @@
     state = "idle";
     timeEl.textContent = fmtSolve(solve);
     render();
+    renderDelta();
     newScramble(); // nieuwe scramble na elke solve
   }
 
@@ -635,6 +980,11 @@
   function isSpace(e) { return e.code === "Space" || e.key === " "; }
   const keyOpts = { capture: true, passive: false };
   window.addEventListener("keydown", e => {
+    if (state === "running") { // elke toets stopt de timer
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) e.preventDefault();
+      if (!e.repeat) stopSolve();
+      return;
+    }
     if (!isSpace(e)) return;
     e.preventDefault();
     if (e.repeat) return;
@@ -652,7 +1002,7 @@
   }, keyOpts);
 
   document.addEventListener("touchstart", e => {
-    if (!isControl(e.target)) { e.preventDefault(); press(); }
+    if (state === "running" || !isControl(e.target)) { e.preventDefault(); press(); }
   }, { passive: false });
   document.addEventListener("touchend", e => {
     if (!isControl(e.target)) { e.preventDefault(); release(); }
@@ -662,7 +1012,8 @@
   function refreshAfterEdit() {
     render();
     if (state === "idle") {
-      timeEl.textContent = solves.length ? fmtSolve(solves[solves.length - 1]) : "0.00";
+      timeEl.textContent = solves.length ? fmtSolve(solves[solves.length - 1]) : "0.000";
+      renderDelta();
     }
   }
 
@@ -707,8 +1058,9 @@
     solves = [];
     openIdx = null;
     saveSolves();
-    timeEl.textContent = "0.00";
+    timeEl.textContent = "0.000";
     render();
+    renderDelta();
   });
 
   // ---------- Puzzel kiezen ----------
@@ -738,9 +1090,10 @@
     solves = loadSolves(puzzle);
     openIdx = null;
     timeEl.className = "";
-    timeEl.textContent = solves.length ? fmtSolve(solves[solves.length - 1]) : "0.00";
+    timeEl.textContent = solves.length ? fmtSolve(solves[solves.length - 1]) : "0.000";
     updateTitle();
     render();
+    renderDelta();
     newScramble();
   }
 
