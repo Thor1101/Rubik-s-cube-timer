@@ -17,19 +17,26 @@
   body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); text-align: center; margin: 0; padding: 20px; min-height: 100vh; }
   h1 { margin: 0 0 10px; font-size: 1.5rem; }
   #scramble { font-size: 1.4rem; line-height: 1.5; max-width: 800px; margin: 20px auto; letter-spacing: 1px; font-family: ui-monospace, Menlo, Consolas, monospace; }
-  #time { font-size: 5.5rem; margin: 40px 0 10px; font-variant-numeric: tabular-nums; }
+  #cube { position: fixed; right: 16px; bottom: 16px; width: min(170px, 40vw); }
+  #cube svg { width: 100%; height: auto; display: block; }
+  #time { font-size: 5.5rem; margin: 30px 0 10px; font-variant-numeric: tabular-nums; }
   #time.ready { color: var(--ready); }
   #time.holding { color: var(--holding); }
-  #hint { color: var(--muted); margin-bottom: 20px; font-size: 0.95rem; }
-  #stats { color: var(--muted); margin: 20px 0; }
+  #stats { color: var(--muted); margin: 20px auto; max-width: 600px; line-height: 1.6; }
   button { background: var(--panel); color: var(--text); border: 1px solid var(--muted); padding: 10px 16px; border-radius: 6px; cursor: pointer; margin: 4px; font-size: 0.95rem; }
   button:hover { border-color: var(--text); }
-  details { max-width: 420px; margin: 20px auto; background: var(--panel); border-radius: 8px; padding: 12px 16px; text-align: left; }
-  summary { cursor: pointer; font-weight: 600; }
-  .row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; gap: 12px; }
+  details { position: fixed; top: 12px; right: 12px; z-index: 10; text-align: left; }
+  summary { display: block; width: fit-content; margin-left: auto; list-style: none; cursor: pointer; user-select: none;
+            font-size: 0.8rem; padding: 6px 12px; border: 1px solid var(--muted); border-radius: 6px; background: var(--panel); color: var(--text); }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover { border-color: var(--text); }
+  .panel { width: 320px; max-width: calc(100vw - 24px); max-height: 80vh; overflow-y: auto; margin-top: 6px;
+           padding: 4px 14px 12px; background: var(--bg); border: 1px solid var(--muted); border-radius: 8px; font-size: 0.9rem; }
+  .panel button { padding: 6px 10px; font-size: 0.85rem; }
+  .row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin: 12px 0; gap: 8px 12px; }
   input[type="color"] { width: 50px; height: 30px; border: 0; background: none; padding: 0; cursor: pointer; }
   input[type="range"] { width: 150px; }
-  #times { max-width: 320px; margin: 20px auto; text-align: left; padding-left: 30px; }
+  #times { max-width: 320px; margin: 20px auto; text-align: left; padding-left: 40px; }
   #times li { padding: 4px 0; border-bottom: 1px solid var(--panel); }
 </style>
 </head>
@@ -39,12 +46,18 @@
   <div id="scramble"></div>
   <button id="newScramble">Nieuwe scramble</button>
 
+  <div id="cube"></div>
+
   <div id="time">0.00</div>
-  <div id="hint">Houd SPATIE ingedrukt tot het groen wordt, laat los om te starten, druk op spatie om te stoppen. (Op telefoon: houd het scherm vast en laat los.)</div>
   <div id="stats"></div>
 
   <details>
-    <summary>Instellingen</summary>
+    <summary>&#9881; Instellingen</summary>
+    <div class="panel">
+    <div class="row">
+      <label for="inspection">Inspectietijd van 15 seconden</label>
+      <input type="checkbox" id="inspection">
+    </div>
     <div class="row">
       <label for="hideTime">Verberg tijd tijdens solve</label>
       <input type="checkbox" id="hideTime">
@@ -78,10 +91,11 @@
       </span>
     </div>
     <button id="resetSettings">Standaardinstellingen</button>
+    </div>
   </details>
 
   <button id="clear">Wis alle tijden</button>
-  <ol id="times"></ol>
+  <ol id="times" reversed></ol>
 
 <script>
   // ---------- Elementen ----------
@@ -89,6 +103,7 @@
   const listEl = document.getElementById("times");
   const statsEl = document.getElementById("stats");
   const scrambleEl = document.getElementById("scramble");
+  const cubeEl = document.getElementById("cube");
   const root = document.documentElement;
 
   // ---------- Opslag (veilig, werkt ook als opslag geblokkeerd is) ----------
@@ -121,13 +136,104 @@
     return moves.join(" ");
   }
 
+  // ---------- 2D afbeelding van de cube ----------
+  // Cube vastgehouden met wit onder en groen voor:
+  // boven = geel, onder = wit, voor = groen, achter = blauw, rechts = oranje, links = rood
+  const COLORS = { U: "#ffd500", D: "#ffffff", F: "#009b48", B: "#0046ad", R: "#ff5800", L: "#c41e3a" };
+  const NORMAL_FACE = { "0,1,0": "U", "0,-1,0": "D", "0,0,1": "F", "0,0,-1": "B", "1,0,0": "R", "-1,0,0": "L" };
+  // Voor elke zet: op welke as en welke laag hij werkt
+  const LAYER = { R: [0, 1], L: [0, -1], U: [1, 1], D: [1, -1], F: [2, 1], B: [2, -1] };
+
+  // 54 stickers: positie (x, y, z) en richting (normaal) van elk sticker
+  function solvedStickers() {
+    const stickers = [];
+    for (let x = -1; x <= 1; x++) {
+      for (let y = -1; y <= 1; y++) {
+        for (let z = -1; z <= 1; z++) {
+          const pos = [x, y, z];
+          for (let axis = 0; axis < 3; axis++) {
+            if (pos[axis] !== 0) {
+              const n = [0, 0, 0];
+              n[axis] = pos[axis];
+              stickers.push({ pos: pos.slice(), n: n, color: COLORS[NORMAL_FACE[n.join(",")]] });
+            }
+          }
+        }
+      }
+    }
+    return stickers;
+  }
+
+  // Een kwartslag met de klok mee (gezien vanaf de buitenkant van die kant)
+  function rotVec(v, face) {
+    const x = v[0], y = v[1], z = v[2];
+    switch (face) {
+      case "R": return [x, z, -y];
+      case "L": return [x, -z, y];
+      case "U": return [-z, y, x];
+      case "D": return [z, y, -x];
+      case "F": return [y, -x, z];
+      case "B": return [-y, x, z];
+    }
+  }
+
+  function applyMove(stickers, face, turns) {
+    const axis = LAYER[face][0], value = LAYER[face][1];
+    for (let i = 0; i < turns; i++) {
+      for (const s of stickers) {
+        if (s.pos[axis] === value) {
+          s.pos = rotVec(s.pos, face);
+          s.n = rotVec(s.n, face);
+        }
+      }
+    }
+  }
+
+  function parseMove(token) {
+    const turns = token[1] === "'" ? 3 : token[1] === "2" ? 2 : 1;
+    return [token[0], turns];
+  }
+
+  // Op welke plek in het kruisvormige plaatje (kolom, rij) hoort een sticker
+  function netCell(s) {
+    const x = s.pos[0], y = s.pos[1], z = s.pos[2];
+    switch (NORMAL_FACE[s.n.join(",")]) {
+      case "U": return [3 + (x + 1), 0 + (z + 1)];
+      case "L": return [0 + (z + 1), 3 + (1 - y)];
+      case "F": return [3 + (x + 1), 3 + (1 - y)];
+      case "R": return [6 + (1 - z), 3 + (1 - y)];
+      case "B": return [9 + (1 - x), 3 + (1 - y)];
+      case "D": return [3 + (x + 1), 6 + (1 - z)];
+    }
+  }
+
+  function renderCube(scramble) {
+    const stickers = solvedStickers();
+    scramble.split(" ").filter(Boolean).forEach(tok => {
+      const m = parseMove(tok);
+      applyMove(stickers, m[0], m[1]);
+    });
+    const S = 20;
+    let svg = '<svg viewBox="0 0 ' + (12 * S) + ' ' + (9 * S) + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cube na de scramble">';
+    stickers.forEach(s => {
+      const c = netCell(s);
+      svg += '<rect x="' + (c[0] * S + 1) + '" y="' + (c[1] * S + 1) + '" width="' + (S - 2) + '" height="' + (S - 2) +
+             '" rx="3" fill="' + s.color + '" stroke="#000" stroke-width="1.2"/>';
+    });
+    svg += "</svg>";
+    cubeEl.innerHTML = svg;
+  }
+
   function newScramble() {
-    scrambleEl.textContent = generateScramble();
+    const scr = generateScramble();
+    scrambleEl.textContent = scr;
+    renderCube(scr);
   }
 
   // ---------- Instellingen ----------
   const DEFAULTS = {
     hideTime: false,
+    inspection: false,
     bg: "#111111",
     text: "#ffffff",
     ready: "#4caf50",
@@ -143,6 +249,7 @@
 
   const inputs = {
     hideTime: document.getElementById("hideTime"),
+    inspection: document.getElementById("inspection"),
     bg: document.getElementById("cBg"),
     text: document.getElementById("cText"),
     ready: document.getElementById("cReady"),
@@ -157,6 +264,7 @@
     root.style.setProperty("--holding", settings.holding);
     timeEl.style.fontSize = settings.timeSize + "rem";
     inputs.hideTime.checked = settings.hideTime;
+    inputs.inspection.checked = settings.inspection;
     inputs.bg.value = settings.bg;
     inputs.text.value = settings.text;
     inputs.ready.value = settings.ready;
@@ -165,10 +273,12 @@
     save("settings", settings);
   }
 
-  inputs.hideTime.addEventListener("change", e => {
-    settings.hideTime = e.target.checked;
-    applySettings();
-    e.target.blur(); // zodat spatie de timer blijft starten
+  ["hideTime", "inspection"].forEach(k => {
+    inputs[k].addEventListener("change", e => {
+      settings[k] = e.target.checked;
+      applySettings();
+      e.target.blur(); // zodat spatie de timer blijft bedienen
+    });
   });
   ["bg", "text", "ready", "holding"].forEach(k => {
     inputs[k].addEventListener("input", e => { settings[k] = e.target.value; applySettings(); });
@@ -190,68 +300,145 @@
     e.target.blur();
   });
 
-  // ---------- Timer ----------
-  let state = "idle"; // idle, holding, ready, running
-  let startTime = 0, raf = null, holdTimer = null;
-  let solves = load("solves", []);
+  // ---------- Tijden en Ao5 ----------
+  // Elke solve: { ms, plus2, dnf }. Oude opgeslagen tijden (alleen getallen) worden omgezet.
+  let solves = load("solves", []).map(s =>
+    typeof s === "number" ? { ms: s, plus2: false, dnf: false } : s
+  );
 
+  function eff(s) { return s.dnf ? Infinity : s.ms + (s.plus2 ? 2000 : 0); }
   function fmt(ms) { return (ms / 1000).toFixed(2); }
+  function fmtVal(v) { return v === Infinity ? "DNF" : fmt(v); }
+  function fmtSolve(s) { return s.dnf ? "DNF" : fmt(eff(s)) + (s.plus2 ? " (+2)" : ""); }
+
+  // Ao5 van de 5 solves die eindigen op index "end": beste en slechtste vallen weg,
+  // gemiddelde van de 3 overige. Bij 2 of meer DNF's is het resultaat DNF.
+  function ao5At(end) {
+    const vals = solves.slice(end - 4, end + 1).map(eff).sort((a, b) => a - b);
+    if (vals[3] === Infinity) return Infinity;
+    return (vals[1] + vals[2] + vals[3]) / 3;
+  }
 
   function render() {
     listEl.innerHTML = "";
-    solves.slice().reverse().forEach(t => {
+    solves.slice().reverse().forEach(s => {
       const li = document.createElement("li");
-      li.textContent = fmt(t) + " s";
+      li.textContent = fmtSolve(s) + " s".replace(" s", s.dnf ? "" : " s");
       listEl.appendChild(li);
     });
-    if (solves.length) {
-      const best = Math.min(...solves);
-      const avg = solves.reduce((a, b) => a + b, 0) / solves.length;
-      statsEl.textContent = "Beste: " + fmt(best) + " s  |  Gemiddeld: " + fmt(avg) + " s  |  Aantal: " + solves.length;
+    if (!solves.length) { statsEl.textContent = ""; return; }
+
+    const finite = solves.map(eff).filter(v => v !== Infinity);
+    const parts = [];
+    parts.push("Beste: " + (finite.length ? fmt(Math.min(...finite)) + " s" : "-"));
+
+    if (solves.length >= 5) {
+      const current = ao5At(solves.length - 1);
+      let bestAo5 = Infinity;
+      for (let i = 4; i < solves.length; i++) bestAo5 = Math.min(bestAo5, ao5At(i));
+      parts.push("Ao5: " + fmtVal(current) + (current === Infinity ? "" : " s"));
+      parts.push("Beste Ao5: " + fmtVal(bestAo5) + (bestAo5 === Infinity ? "" : " s"));
     } else {
-      statsEl.textContent = "";
+      parts.push("Ao5: - (nog " + (5 - solves.length) + " solves)");
     }
+
+    if (finite.length) {
+      parts.push("Gemiddeld: " + fmt(finite.reduce((a, b) => a + b, 0) / finite.length) + " s");
+    }
+    parts.push("Aantal: " + solves.length);
+    statsEl.textContent = parts.join("  |  ");
   }
 
-  function tick() {
-    if (settings.hideTime) {
-      timeEl.textContent = "Solving...";
-    } else {
-      timeEl.textContent = fmt(performance.now() - startTime);
+  // ---------- Timer ----------
+  // Toestanden: idle, inspecting, holding, ready, running
+  let state = "idle";
+  let startTime = 0, inspectStart = null, penalty = 0;
+  let raf = null, holdTimer = null;
+
+  function loop() {
+    const now = performance.now();
+    if (state === "running") {
+      timeEl.textContent = settings.hideTime ? "Solving..." : fmt(now - startTime);
+    } else if (inspectStart !== null) {
+      const el = (now - inspectStart) / 1000;
+      if (el >= 17) { inspectionDnf(); return; }
+      timeEl.textContent = el >= 15 ? "+2" : String(Math.ceil(15 - el));
     }
-    raf = requestAnimationFrame(tick);
+    raf = requestAnimationFrame(loop);
+  }
+  function startLoop() {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(loop);
+  }
+
+  function startInspection() {
+    state = "inspecting";
+    inspectStart = performance.now();
+    timeEl.className = "";
+    startLoop();
+  }
+
+  // Niet gestart binnen 17 seconden: DNF
+  function inspectionDnf() {
+    clearTimeout(holdTimer);
+    inspectStart = null;
+    state = "idle";
+    timeEl.className = "";
+    solves.push({ ms: 0, plus2: false, dnf: true });
+    save("solves", solves);
+    timeEl.textContent = "DNF";
+    render();
+    newScramble();
+  }
+
+  function beginHold() {
+    state = "holding";
+    timeEl.className = "holding";
+    holdTimer = setTimeout(() => {
+      state = "ready";
+      timeEl.className = "ready";
+    }, 400);
+  }
+
+  function stopSolve() {
+    cancelAnimationFrame(raf);
+    const t = performance.now() - startTime;
+    const solve = { ms: t, plus2: penalty > 0, dnf: false };
+    solves.push(solve);
+    save("solves", solves);
+    state = "idle";
+    timeEl.textContent = fmtSolve(solve);
+    render();
+    newScramble(); // nieuwe scramble na elke solve
   }
 
   function press() {
     if (state === "running") {
-      cancelAnimationFrame(raf);
-      const t = performance.now() - startTime;
-      timeEl.textContent = fmt(t);
-      solves.push(t);
-      save("solves", solves);
-      state = "idle";
-      render();
-      newScramble(); // nieuwe scramble na elke solve
+      stopSolve();
     } else if (state === "idle") {
-      state = "holding";
-      timeEl.className = "holding";
-      holdTimer = setTimeout(() => {
-        state = "ready";
-        timeEl.className = "ready";
-      }, 400);
+      if (settings.inspection) startInspection();
+      else beginHold();
+    } else if (state === "inspecting") {
+      beginHold();
     }
   }
 
   function release() {
     if (state === "ready") {
       timeEl.className = "";
+      penalty = 0;
+      if (inspectStart !== null) {
+        const el = (performance.now() - inspectStart) / 1000;
+        penalty = el >= 15 ? 2000 : 0; // tussen 15 en 17 seconden: +2
+        inspectStart = null;
+      }
       state = "running";
       startTime = performance.now();
-      tick();
+      startLoop();
     } else if (state === "holding") {
       clearTimeout(holdTimer);
       timeEl.className = "";
-      state = "idle";
+      state = inspectStart !== null ? "inspecting" : "idle";
     }
   }
 
