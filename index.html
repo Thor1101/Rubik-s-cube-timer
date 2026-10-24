@@ -38,6 +38,7 @@
   #scramble { font-size: 1.4rem; line-height: 1.5; max-width: 800px; margin: 20px auto; letter-spacing: 1px;
               font-family: ui-monospace, Menlo, Consolas, monospace; white-space: pre-line; }
   #scramble.long { font-size: 1.1rem; letter-spacing: 0; }
+  #scramble.mega { font-size: 0.9rem; letter-spacing: 0; }
   #time { font-size: var(--time-size, 5.5rem); margin: 30px 0 4px; font-variant-numeric: tabular-nums; }
   #time.ready { color: var(--ready); }
   #time.holding { color: var(--holding); }
@@ -47,9 +48,9 @@
   #delta.even { color: var(--muted); }
 
   /* 2D afbeelding rechtsonder */
-  #cube { position: fixed; right: 16px; bottom: 16px; width: min(230px, 42vw); }
-  #cube.mid { width: min(270px, 48vw); }
-  #cube.wide { width: min(380px, 60vw); }
+  #cube { position: fixed; right: 4px; bottom: 4px; width: min(420px, 45vw); }
+  #cube.mid { right: 16px; bottom: 16px; width: min(270px, 48vw); }
+  #cube.wide { right: 16px; bottom: 16px; width: min(380px, 60vw); }
   #cube svg { width: 100%; height: auto; display: block; }
 
   /* Balk links */
@@ -93,7 +94,7 @@
     #time { font-size: calc(var(--time-size, 5.5rem) * 0.55); margin: 10px 0 4px; overflow-wrap: anywhere; }
     #delta { font-size: 1.3rem; min-height: 1.8rem; }
     #cube, #cube.mid, #cube.wide { position: static; flex: 0 0 auto; }
-    #cube { width: min(36vw, 170px); }
+    #cube { width: min(40vw, 200px); }
     #cube.mid { width: min(40vw, 190px); }
     #cube.wide { width: min(46vw, 230px); }
   }
@@ -385,6 +386,11 @@
       { verts: ["U", "R", "B"], color: "#0046ad", p2: [[0, 0], [0.5 * E, H], [E, 0]] },
       { verts: ["L", "R", "B"], color: "#ffd500", p2: [[-0.5 * E, H], [0.5 * E, H], [0, 2 * H]] }
     ];
+    // Kleine spatie tussen de vlakken: elk buitenvlak schuift een stukje van het voorvlak af
+    const G = 6;
+    const K = Math.sqrt(3) / 2;
+    const OFF = [[0, 0], [-K * G, -0.5 * G], [K * G, -0.5 * G], [0, G]];
+    FACES.forEach((f, i) => { f.p2 = f.p2.map(q => [q[0] + OFF[i][0], q[1] + OFF[i][1]]); });
     const slots = [];
     FACES.forEach((f, fi) => {
       const tris = [];
@@ -403,7 +409,7 @@
         slots.push({ face: fi, pos: pos, w: w, pts2: pts2 });
       });
     });
-    PYRA = { V: V, FACES: FACES, slots: slots, E: E, H: H, perms: {}, maxErr: 0,
+    PYRA = { V: V, FACES: FACES, slots: slots, E: E, H: H, G: G, perms: {}, maxErr: 0,
              colors: slots.map(s => FACES[s.face].color) };
     return PYRA;
   }
@@ -442,8 +448,8 @@
     const P = getPyra();
     let colors = P.colors.slice();
     scramble.split(/\s+/).filter(Boolean).forEach(tok => { colors = pyraApply(P, colors, tok); });
-    const E = P.E, H = P.H, pad = 4;
-    let svg = '<svg viewBox="' + (-E - pad) + ' ' + (-pad) + ' ' + (2 * E + 2 * pad) + ' ' + (2 * H + 2 * pad) +
+    const E = P.E, H = P.H, G = P.G, pad = 4;
+    let svg = '<svg viewBox="' + (-E - 0.8660254 * G - pad) + ' ' + (-0.5 * G - pad) + ' ' + (2 * E + 1.7320508 * G + 2 * pad) + ' ' + (2 * H + 1.5 * G + 2 * pad) +
               '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pyraminx na de scramble">';
     P.slots.forEach((s, i) => {
       svg += '<polygon points="' + s.pts2.map(p => p[0].toFixed(2) + "," + p[1].toFixed(2)).join(" ") +
@@ -462,8 +468,9 @@
     const rad = Math.PI / 180;
     const c = 1 / Math.sqrt(5), s = 2 / Math.sqrt(5);
     const names = ["U", "F", "R", "BR", "BL", "L", "DR", "DBR", "B", "DBL", "DL", "D"];
-    const cols = { U: "#9e9e9e", D: "#ffffff", F: "#00a651", B: "#f48fb1", R: "#d32f2f", DBL: "#81d4fa",
-                   BR: "#fdd835", DL: "#8e24aa", BL: "#1e40af", DR: "#fff59d", L: "#fb8c00", DBR: "#aed581" };
+    // Kleuren zoals in je voorbeeld: boven grijs, onder wit, voor lichtgroen, achter donkergroen, ...
+    const cols = { U: "#999999", D: "#ffffff", F: "#77ee00", B: "#006600", R: "#ff99ff", DBL: "#8811ff",
+                   L: "#ff8833", DBR: "#dd0000", BL: "#88ddff", DR: "#0000bb", BR: "#ffffbb", DL: "#ffcc00" };
 
     // Normaalvectoren van de 12 vlakken (U boven, F voor)
     const N = [[0, 1, 0]];
@@ -535,16 +542,16 @@
       return { set: order.slice(0, 26), gap: vDot(slots[order[25]].pos, axis) - vDot(slots[order[26]].pos, axis) };
     }
 
-    // De middenstukken zitten vast aan de kern en bewegen nooit mee.
-    // R++ draait alles behalve het tegenoverliggende dek 144 graden met de klok mee. Ten opzichte van de
-    // kern (de middenstukken) komt dat neer op: alleen het tegenoverliggende dek draait 144 graden de andere kant op.
+    // De zetten gebeuren in de ruimte, net zoals je ze met de puzzel in je handen doet: R++ draait alles
+    // behalve het tegenoverliggende dek, dus de hele puzzel kantelt mee. Daarna draaien we de puzzel terug
+    // zodat de middenstukken weer op hun plek staan (zie "normalize").
     const MOVES = {
-      "U":   { axis: 0,  ang: -72, opp: false },
-      "U'":  { axis: 0,  ang: 72,  opp: false },
-      "R++": { axis: 2,  ang: 144, opp: true },
-      "R--": { axis: 2,  ang: -144, opp: true },
-      "D++": { axis: 11, ang: 144, opp: true },
-      "D--": { axis: 11, ang: -144, opp: true }
+      "U":   { axis: 0,  ang: -72,  cap: true },
+      "U'":  { axis: 0,  ang: 72,   cap: true },
+      "R++": { axis: 2,  ang: -144, cap: false },
+      "R--": { axis: 2,  ang: 144,  cap: false },
+      "D++": { axis: 11, ang: -144, cap: false },
+      "D--": { axis: 11, ang: 144,  cap: false }
     };
 
     MEGA = { N: N, verts: verts, FV: FV, slots: slots, faceSlots: faceSlots, MOVES: MOVES, perms: {}, maxErr: 0,
@@ -555,9 +562,15 @@
       if (MEGA.perms[token]) return MEGA.perms[token];
       const mv = MOVES[token];
       const a = N[mv.axis];
-      const region = mv.opp ? capSet(vScale(a, -1)).set : capSet(a).set;
+      let region;
+      if (mv.cap) {
+        region = capSet(a).set;
+      } else {
+        const opp = new Set(capSet(vScale(a, -1)).set);
+        region = slots.map((_, i) => i).filter(i => !opp.has(i));
+      }
       const perm = slots.map((_, i) => i);
-      const th = mv.ang * rad; // rechterhandregel om de as van het vlak
+      const th = mv.ang * rad; // negatief = met de klok mee gezien vanaf het vlak
       region.forEach(i => {
         const r = nearest(rotAxis(slots[i].pos, a, th));
         MEGA.maxErr = Math.max(MEGA.maxErr, r[1]);
@@ -572,6 +585,30 @@
       const perm = MEGA.perm(token);
       const out = new Array(colors.length);
       for (let i = 0; i < colors.length; i++) out[perm[i]] = colors[i];
+      return out;
+    };
+
+    // Draai de hele puzzel terug naar de standaardstand: het grijze midden boven en het lichtgroene midden voor.
+    // (De middenstukken zitten vast aan de kern, dus zo zie je de puzzel zoals hij er ten opzichte van de middens uitziet.)
+    MEGA.normalize = function (colors) {
+      const centers = faceSlots.map(fs => fs[0]);
+      const home = names.map(nm => cols[nm]);
+      const fu = centers.findIndex(ci => colors[ci] === home[0]);
+      const ff = centers.findIndex(ci => colors[ci] === home[1]);
+      if (fu < 0 || ff < 0) return colors;
+      const a1 = N[fu];
+      const a2 = vNorm(vSub(N[ff], vScale(a1, vDot(N[ff], a1))));
+      const a3 = vCross(a1, a2);
+      const b1 = N[0];
+      const b2 = vNorm(vSub(N[1], vScale(b1, vDot(N[1], b1))));
+      const b3 = vCross(b1, b2);
+      const g = v => vAdd(vAdd(vScale(b1, vDot(a1, v)), vScale(b2, vDot(a2, v))), vScale(b3, vDot(a3, v)));
+      const out = new Array(colors.length);
+      slots.forEach((sl, i) => {
+        const r = nearest(g(sl.pos));
+        MEGA.maxErr = Math.max(MEGA.maxErr, r[1]);
+        out[r[0]] = colors[i];
+      });
       return out;
     };
 
@@ -608,7 +645,7 @@
       return b;
     }
     const f1 = flower(0, [1, 0, 0]);   // boven: voorkant onderaan
-    const f2 = flower(11, [1, 0, 0]);  // onder: voorkant bovenaan
+    const f2 = flower(11, [-1, 0, 0]); // onder: achterkant bovenaan (puzzel omgedraaid om de voor-achteras)
     const b1 = bbox(f1), b2 = bbox(f2);
     const R2 = Math.hypot(f1.polys[0][0][0], f1.polys[0][0][1]);
     const gap = R2 * 0.6;
@@ -637,6 +674,7 @@
     const M = getMega();
     let colors = M.colors.slice();
     scramble.split(/\s+/).filter(Boolean).forEach(tok => { colors = M.apply(colors, tok); });
+    colors = M.normalize(colors);
     const R = M.R2, pad = R * 0.15;
     let svg = '<svg viewBox="' + (-pad).toFixed(2) + ' ' + (-pad).toFixed(2) + ' ' + (M.W + 2 * pad).toFixed(2) + ' ' + (M.H + 2 * pad).toFixed(2) +
               '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Megaminx na de scramble">';
@@ -670,7 +708,7 @@
   function setScramble(scr) {
     currentScramble = scr;
     scrambleEl.textContent = scr;
-    scrambleEl.className = scr.length > 60 ? "long" : "";
+    scrambleEl.className = puzzle === "mega" ? "mega" : scr.length > 60 ? "long" : "";
     renderCube(scr);
   }
 
