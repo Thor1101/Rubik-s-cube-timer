@@ -4,168 +4,227 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cube Timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #111111;
+    --bg: #0b2d80;
+    --bg-top: #1c5ee0;
     --text: #ffffff;
-    --ready: #4caf50;
-    --holding: #e53935;
-    --muted: #999999;
-    --panel: rgba(128, 128, 128, 0.15);
-    --line: rgba(128, 128, 128, 0.3);
-    --sidebar-w: 320px;
+    --ready: #5be37d;
+    --holding: #ff5252;
+    --muted: rgba(255, 255, 255, 0.65);
+    --panel: rgba(255, 255, 255, 0.10);
+    --line: rgba(255, 255, 255, 0.20);
+    --side-bg: rgba(0, 0, 0, 0.25);
+    --sidebar-w: clamp(330px, 26vw, 390px);
+    --time-size: 9rem;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
-  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); text-align: center;
-         padding: 20px 20px 20px calc(var(--sidebar-w) + 40px); min-height: 100vh; }
-  button { background: var(--panel); color: var(--text); border: 1px solid var(--muted); padding: 10px 16px; border-radius: 6px; cursor: pointer; margin: 4px; font-size: 0.95rem; }
+  body { font-family: system-ui, "Segoe UI", Roboto, sans-serif; color: var(--text);
+         background-color: var(--bg);
+         background-image: linear-gradient(180deg, var(--bg-top) 0%, var(--bg) 75%);
+         background-attachment: fixed; min-height: 100vh; }
+  button { font-family: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line);
+           border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 0.9rem; }
   button:hover { border-color: var(--text); }
 
-  /* Titel = gekozen puzzel */
-  #titleWrap { position: relative; display: inline-block; margin: 6px 0 10px; }
-  h1 { margin: 0; }
-  #puzzleBtn { font-size: 1.8rem; font-weight: 700; background: none; border: 1px solid transparent; padding: 4px 14px; border-radius: 8px; margin: 0; }
-  #puzzleBtn:hover { border-color: var(--muted); }
-  #puzzleMenu { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); z-index: 30; min-width: 190px;
-                background: var(--bg); border: 1px solid var(--muted); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; }
-  #puzzleMenu[hidden] { display: none; }
-  #puzzleMenu button { text-align: left; margin: 2px 0; border-color: transparent; background: none; }
-  #puzzleMenu button:hover { background: var(--panel); }
-  #puzzleMenu button.on { background: var(--panel); font-weight: 700; }
+  /* ---------- Hoofdgedeelte ---------- */
+  #main { margin-right: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; padding: 16px 28px 8px; text-align: center; }
+  #topBar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  #topRight { display: flex; align-items: center; gap: 10px; }
+  #puzzleBar { display: inline-flex; background: var(--text); border-radius: 14px; padding: 4px; gap: 2px; max-width: 100%; overflow-x: auto; }
+  #puzzleBar button { background: none; border: none; color: var(--bg); opacity: 0.7; font-weight: 700; padding: 10px 16px;
+                      border-radius: 10px; font-size: 0.95rem; white-space: nowrap; }
+  #puzzleBar button:hover { opacity: 1; }
+  #puzzleBar button.on { background: var(--bg); color: var(--text); opacity: 1; }
+  .pill { background: var(--text); color: var(--bg); border: 2px solid var(--text); border-radius: 999px; padding: 9px 20px; font-weight: 700; font-size: 0.9rem; }
+  .pill:hover { opacity: 0.92; }
+  .pill.on { background: var(--ready); border-color: var(--ready); color: #0b1020; }
 
-  /* Scramble, tijd en verschil met vorige solve */
-  #scramble { font-size: 1.4rem; line-height: 1.5; max-width: 800px; margin: 20px auto; letter-spacing: 1px;
-              font-family: ui-monospace, Menlo, Consolas, monospace; white-space: pre-line; }
-  #scramble.long { font-size: 1.1rem; letter-spacing: 0; }
-  #scramble.mega { font-size: 0.9rem; letter-spacing: 0; }
-  #time { font-size: var(--time-size, 5.5rem); margin: 30px 0 4px; font-variant-numeric: tabular-nums; }
-  #time.ready { color: var(--ready); }
-  #time.holding { color: var(--holding); }
-  #delta { font-size: 1.8rem; font-weight: 600; min-height: 2.4rem; font-variant-numeric: tabular-nums; }
-  #delta.slower { color: #e53935; }
-  #delta.faster { color: #43a047; }
-  #delta.even { color: var(--muted); }
-
-  /* 2D afbeelding rechtsonder */
-  #cube { position: fixed; right: 4px; bottom: 4px; width: min(420px, 45vw); }
-  #cube.mid { right: 16px; bottom: 16px; width: min(270px, 48vw); }
-  #cube.wide { right: 16px; bottom: 16px; width: min(380px, 60vw); }
-  #cube svg { width: 100%; height: auto; display: block; }
-
-  /* Balk links */
-  #side { position: fixed; left: 12px; top: 12px; bottom: 12px; width: var(--sidebar-w); display: flex; flex-direction: column; gap: 10px; text-align: left; z-index: 5; }
-  #bar { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border-radius: 10px; padding: 12px; }
-  #stats { flex: none; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
-  .stat { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; padding: 2px 0; font-variant-numeric: tabular-nums; }
-  .stat span:first-child { color: var(--muted); }
-  #times { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding-left: 30px; font-size: 0.8rem; }
-  #times li { padding: 5px 0; border-bottom: 1px solid var(--line); }
-  .solveRow { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; }
-  .solveTime { flex: 1 1 auto; min-width: 0; white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; }
-  #times button { padding: 2px 5px; font-size: 0.65rem; margin: 0; white-space: nowrap; flex: none; }
-  #times button.on { background: var(--text); color: var(--bg); }
-  .scrambleBox { margin: 8px 0 2px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.75rem; line-height: 1.6; color: var(--muted); white-space: pre-line; }
-  .scrambleBox button { display: block; margin-top: 8px; }
-  #clear { flex: none; width: 100%; margin: 10px 0 0; font-size: 0.85rem; padding: 8px; }
-
-  /* Instellingen: vierkante knop boven de balk */
-  details { position: relative; flex: none; width: 44px; }
-  summary { list-style: none; cursor: pointer; user-select: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem; border: 1px solid var(--muted); border-radius: 8px; background: var(--panel); color: var(--text); }
+  /* Instellingen: kleine ronde knop links van de inspectie-knop */
+  details { position: relative; flex: none; width: 38px; height: 38px; }
+  summary { list-style: none; cursor: pointer; user-select: none; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.15rem; border: 1px solid var(--line); border-radius: 50%; background: var(--panel); color: var(--text); }
   summary::-webkit-details-marker { display: none; }
   summary:hover { border-color: var(--text); }
-  .panel { position: absolute; top: 50px; left: 0; z-index: 40; width: 320px; max-width: calc(100vw - 24px); max-height: calc(100vh - 80px); overflow-y: auto;
-           padding: 4px 14px 12px; background: var(--bg); border: 1px solid var(--muted); border-radius: 8px; font-size: 0.9rem; }
+  .panel { position: absolute; top: 46px; right: 0; z-index: 40; width: 320px; max-width: calc(100vw - 24px); max-height: calc(100vh - 80px); overflow-y: auto;
+           padding: 4px 14px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; font-size: 0.9rem; text-align: left; }
   .panel button { padding: 6px 10px; font-size: 0.85rem; }
   .row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin: 12px 0; gap: 8px 12px; }
   input[type="color"] { width: 50px; height: 30px; border: 0; background: none; padding: 0; cursor: pointer; }
   input[type="range"] { width: 150px; }
 
-  /* Smal scherm (telefoon): balk onder de timer */
+  #center { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4vh 0 0; }
+  #scrambleRow { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 20px clamp(48px, 10.8vw, 140px); max-width: 100%; }
+  #scramble { flex: 0 1 560px; font-family: var(--mono); font-weight: 700; font-size: 1.5rem; line-height: 1.6;
+              letter-spacing: 0.1em; white-space: pre-line; }
+  #scramble.long { font-size: 1.15rem; letter-spacing: 0.04em; }
+  #scramble.mega { font-size: 0.85rem; letter-spacing: 0.02em; }
+  .link { background: none; border: none; color: var(--text); font-weight: 600; opacity: 0.85; padding: 6px 10px; font-size: 0.95rem; margin-top: 10px; }
+  .link:hover { opacity: 1; }
+
+  #timeRow { margin: auto 0; }
+  #time { font-family: var(--mono); font-weight: 800; font-size: var(--time-size); line-height: 1.05; margin: 12px 0 0;
+          font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  #time.ready { color: var(--ready); }
+  #time.holding { color: var(--holding); }
+  #delta { font-family: var(--mono); font-size: 1.9rem; font-weight: 700; min-height: 2.6rem; font-variant-numeric: tabular-nums; }
+  #delta.slower { color: #ff5252; }
+  #delta.faster { color: #4cdf72; }
+  #delta.even { color: var(--muted); }
+
+  /* 2D afbeelding: zelfde formaat en plek als in je voorbeeld (rechts naast de scramble) */
+  #cube { flex: 0 0 auto; width: clamp(115px, 11.4vw, 175px); }
+  #cube.mid { width: clamp(110px, 10.8vw, 165px); }
+  #cube.wide { width: clamp(200px, 20vw, 300px); }
+  #cube svg { width: 100%; height: auto; display: block; }
+
+  #bottomStats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 18px 0 14px; }
+  .bs .l { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .bs .v { font-size: 1.7rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Balk rechts ---------- */
+  #side { position: fixed; top: 0; right: 0; bottom: 0; width: var(--sidebar-w); display: flex; flex-direction: column; gap: 14px;
+          padding: 14px; background: var(--side-bg); z-index: 5; text-align: left; }
+
+  /* Dagelijkse scramble */
+  #dailyCard { flex: none; background: #ffd22e; color: #0b2a78; border-radius: 16px; padding: 16px; }
+  .dTop { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; }
+  .dTitle { font-size: 1.3rem; font-weight: 800; line-height: 1.2; margin: 8px 0 6px; }
+  .dSub { font-size: 0.8rem; opacity: 0.75; margin-bottom: 12px; min-height: 1em; }
+  #dailyBtn { display: block; width: 100%; background: #0b2a78; color: #ffffff; border: none; border-radius: 12px; padding: 14px; font-weight: 800; font-size: 1rem; margin: 0; }
+  #dailyBtn:hover { border: none; opacity: 0.92; }
+  #dailyBtn:disabled { opacity: 0.45; cursor: default; }
+
+  #bar { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .gridRow { display: grid; grid-template-columns: 26px minmax(0, 1fr) 80px; align-items: center; column-gap: 6px; }
+  #sideHead { font-size: 0.7rem; letter-spacing: 0.12em; font-weight: 700; color: var(--muted); padding: 4px 0 8px; }
+  #sideHead span:nth-child(3) { text-align: right; }
+  #sumLine { font-size: 0.75rem; color: var(--muted); padding: 8px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  #times { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 0; list-style: none; scrollbar-width: none; }
+  #times::-webkit-scrollbar { display: none; }
+  #times li { padding: 4px 0; border-bottom: 1px solid var(--line); }
+  .solveRow { cursor: pointer; border-radius: 6px; padding: 6px 4px; margin: 0 -4px; }
+  .solveRow:hover, #times li.open .solveRow { background: var(--panel); }
+  .idx { color: var(--muted); font-size: 0.75rem; }
+  .solveTime { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .solveTime.best { color: var(--ready); }
+  .rowAo { text-align: right; color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+  .rowOpts { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 0 6px 30px; }
+  #times button { padding: 5px 10px; font-size: 0.75rem; border-radius: 8px; white-space: nowrap; }
+  #times button.on { background: var(--text); color: var(--bg); }
+  .scrambleBox { margin: 2px 0 6px 30px; font-family: var(--mono); font-size: 0.75rem; line-height: 1.6; color: var(--muted); white-space: pre-line; }
+  .scrambleBox button { display: block; margin-top: 8px; }
+  #clear { flex: none; width: 100%; margin: 10px 0 0; font-size: 0.85rem; padding: 8px; }
+
+  /* ---------- Smal scherm (telefoon) ---------- */
   @media (max-width: 800px) {
-    body { padding: 16px; }
-    #side { position: static; width: auto; max-width: 440px; margin: 24px auto 0; }
+    #main { margin-right: 0; min-height: 0; padding: 12px 14px; }
+    #side { position: static; width: auto; max-width: 520px; margin: 8px auto 20px; background: transparent; padding: 12px 14px; }
     #times { max-height: 50vh; }
     .panel { position: fixed; top: 12px; left: 12px; right: 12px; width: auto; max-height: calc(100vh - 24px); }
+    #center { padding-top: 12px; }
+    #scrambleRow { flex-direction: column; }
+    #scramble { font-size: 1.15rem; }
     /* op een telefoon staat de afbeelding rechts van de tijd */
-    #timeRow { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
+    #timeRow { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 10px 0; }
     #timeBox { flex: 1 1 auto; min-width: 0; }
-    #time { font-size: calc(var(--time-size, 5.5rem) * 0.55); margin: 10px 0 4px; overflow-wrap: anywhere; }
+    #time { font-size: calc(var(--time-size) * 0.45); }
     #delta { font-size: 1.3rem; min-height: 1.8rem; }
-    #cube, #cube.mid, #cube.wide { position: static; flex: 0 0 auto; }
     #cube { width: min(40vw, 200px); }
-    #cube.mid { width: min(40vw, 190px); }
+    #cube.mid { width: min(42vw, 200px); }
     #cube.wide { width: min(46vw, 230px); }
+    .bs .v { font-size: 1.2rem; }
   }
 </style>
 </head>
 <body>
   <main id="main">
-    <div id="titleWrap">
-      <h1><button id="puzzleBtn" aria-haspopup="true" title="Kies een puzzel"></button></h1>
-      <div id="puzzleMenu" hidden></div>
+    <div id="topBar">
+      <div id="puzzleBar" role="tablist" aria-label="Kies een puzzel"></div>
+      <div id="topRight">
+        <details>
+          <summary title="Instellingen" aria-label="Instellingen">&#9881;</summary>
+          <div class="panel">
+            <div class="row">
+              <label for="hideTime">Verberg tijd tijdens solve</label>
+              <input type="checkbox" id="hideTime">
+            </div>
+            <div class="row">
+              <label for="cBg">Achtergrondkleur</label>
+              <input type="color" id="cBg">
+            </div>
+            <div class="row">
+              <label for="cText">Tekstkleur</label>
+              <input type="color" id="cText">
+            </div>
+            <div class="row">
+              <label for="cReady">Kleur "klaar om te starten"</label>
+              <input type="color" id="cReady">
+            </div>
+            <div class="row">
+              <label for="cHolding">Kleur "vasthouden"</label>
+              <input type="color" id="cHolding">
+            </div>
+            <div class="row">
+              <label for="timeSize">Grootte van de tijd</label>
+              <input type="range" id="timeSize" min="3" max="14" step="0.5">
+            </div>
+            <div class="row">
+              <label>Thema's</label>
+              <span>
+                <button data-theme="blue">Blauw</button>
+                <button data-theme="dark">Donker</button>
+                <button data-theme="light">Licht</button>
+                <button data-theme="cube">Cube</button>
+              </span>
+            </div>
+            <button id="resetSettings">Standaardinstellingen</button>
+          </div>
+        </details>
+        <button id="inspBtn" class="pill" title="Inspectietijd van 15 seconden aan of uit"></button>
+      </div>
     </div>
 
-    <div id="scramble"></div>
-    <button id="newScramble">Nieuwe scramble</button>
-
-    <div id="timeRow">
-      <div id="timeBox">
-        <div id="time">0.000</div>
-        <div id="delta"></div>
+    <div id="center">
+      <div id="scrambleRow">
+        <div id="scramble"></div>
+        <div id="cube"></div>
       </div>
-      <div id="cube"></div>
+      <button id="newScramble" class="link">Nieuwe scramble &#8635;</button>
+
+      <div id="timeRow">
+        <div id="timeBox">
+          <div id="time">0.000</div>
+          <div id="delta"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="bottomStats">
+      <div class="bs"><div class="l">Ao5</div><div class="v" id="bsAo5">-</div></div>
+      <div class="bs"><div class="l">Ao12</div><div class="v" id="bsAo12">-</div></div>
+      <div class="bs"><div class="l">Beste</div><div class="v" id="bsBest">-</div></div>
+      <div class="bs"><div class="l">Solves</div><div class="v" id="bsSolves">0</div></div>
     </div>
   </main>
 
   <aside id="side">
-    <details>
-      <summary title="Instellingen" aria-label="Instellingen">&#9881;</summary>
-      <div class="panel">
-        <div class="row">
-          <label for="inspection">Inspectietijd van 15 seconden</label>
-          <input type="checkbox" id="inspection">
-        </div>
-        <div class="row">
-          <label for="hideTime">Verberg tijd tijdens solve</label>
-          <input type="checkbox" id="hideTime">
-        </div>
-        <div class="row">
-          <label for="cBg">Achtergrondkleur</label>
-          <input type="color" id="cBg">
-        </div>
-        <div class="row">
-          <label for="cText">Tekstkleur</label>
-          <input type="color" id="cText">
-        </div>
-        <div class="row">
-          <label for="cReady">Kleur "klaar om te starten"</label>
-          <input type="color" id="cReady">
-        </div>
-        <div class="row">
-          <label for="cHolding">Kleur "vasthouden"</label>
-          <input type="color" id="cHolding">
-        </div>
-        <div class="row">
-          <label for="timeSize">Grootte van de tijd</label>
-          <input type="range" id="timeSize" min="3" max="9" step="0.5">
-        </div>
-        <div class="row">
-          <label>Thema's</label>
-          <span>
-            <button data-theme="dark">Donker</button>
-            <button data-theme="light">Licht</button>
-            <button data-theme="cube">Cube</button>
-          </span>
-        </div>
-        <button id="resetSettings">Standaardinstellingen</button>
-      </div>
-    </details>
+    <div id="dailyCard">
+      <div class="dTop" id="dailyDate"></div>
+      <div class="dTitle" id="dailyTitle"></div>
+      <div class="dSub" id="dailySub"></div>
+      <button id="dailyBtn">Doe mee</button>
+    </div>
 
     <div id="bar">
-      <div id="stats"></div>
-      <ol id="times" reversed></ol>
+      <div id="sideHead" class="gridRow"><span></span><span>TIJDEN</span><span>AO5</span></div>
+      <div id="sumLine"></div>
+      <ol id="times"></ol>
       <button id="clear">Wis alle tijden</button>
     </div>
   </aside>
@@ -175,11 +234,19 @@
   const timeEl = document.getElementById("time");
   const deltaEl = document.getElementById("delta");
   const listEl = document.getElementById("times");
-  const statsEl = document.getElementById("stats");
+  const sumEl = document.getElementById("sumLine");
   const scrambleEl = document.getElementById("scramble");
   const cubeEl = document.getElementById("cube");
-  const puzzleBtn = document.getElementById("puzzleBtn");
-  const puzzleMenu = document.getElementById("puzzleMenu");
+  const puzzleBar = document.getElementById("puzzleBar");
+  const inspBtn = document.getElementById("inspBtn");
+  const bsAo5 = document.getElementById("bsAo5");
+  const bsAo12 = document.getElementById("bsAo12");
+  const bsBest = document.getElementById("bsBest");
+  const bsSolves = document.getElementById("bsSolves");
+  const dailyDate = document.getElementById("dailyDate");
+  const dailyTitle = document.getElementById("dailyTitle");
+  const dailySub = document.getElementById("dailySub");
+  const dailyBtn = document.getElementById("dailyBtn");
   const root = document.documentElement;
 
   // ---------- Opslag (veilig, werkt ook als opslag geblokkeerd is) ----------
@@ -195,11 +262,11 @@
 
   // ---------- Puzzels ----------
   const PUZZLES = {
-    "333":  { name: "3x3x3",    kind: "cube", n: 3 },
-    "222":  { name: "2x2x2",    kind: "cube", n: 2 },
-    "444":  { name: "4x4x4",    kind: "cube", n: 4 },
-    "mega": { name: "Megaminx", kind: "mega" },
-    "pyra": { name: "Pyraminx", kind: "pyra" }
+    "333":  { name: "3x3x3",    short: "3x3",      kind: "cube", n: 3 },
+    "222":  { name: "2x2x2",    short: "2x2",      kind: "cube", n: 2 },
+    "444":  { name: "4x4x4",    short: "4x4",      kind: "cube", n: 4 },
+    "mega": { name: "Megaminx", short: "Megaminx", kind: "mega" },
+    "pyra": { name: "Pyraminx", short: "Pyraminx", kind: "pyra" }
   };
   let puzzle = load("puzzle", "333");
   if (!PUZZLES[puzzle]) puzzle = "333";
@@ -209,17 +276,18 @@
   const MODS = ["", "'", "2"];
 
   // Scramble voor kubussen: kies zetten uit "names", nooit twee keer dezelfde kant na elkaar
-  function genCubeScramble(names, length) {
+  function genCubeScramble(names, length, rnd) {
+    rnd = rnd || Math.random;
     const moves = [];
     while (moves.length < length) {
-      const name = names[Math.floor(Math.random() * names.length)];
+      const name = names[Math.floor(rnd() * names.length)];
       const face = name[0];
       const last = moves.length ? moves[moves.length - 1][0] : null;
       const beforeLast = moves.length > 1 ? moves[moves.length - 2][0] : null;
       if (face === last) continue;
       // geen drie zetten op dezelfde as (bijv. R L R)
       if (last && beforeLast && AXIS[face] === AXIS[last] && AXIS[last] === AXIS[beforeLast]) continue;
-      moves.push(name + MODS[Math.floor(Math.random() * MODS.length)]);
+      moves.push(name + MODS[Math.floor(rnd() * MODS.length)]);
     }
     return moves.join(" ");
   }
@@ -706,6 +774,7 @@
   let currentScramble = "";
 
   function setScramble(scr) {
+    if (dailyActive && scr !== dailyScramble()) { dailyActive = false; renderDaily(); }
     currentScramble = scr;
     scrambleEl.textContent = scr;
     scrambleEl.className = puzzle === "mega" ? "mega" : scr.length > 60 ? "long" : "";
@@ -716,26 +785,76 @@
     setScramble(generateScramble(puzzle));
   }
 
+  // ---------- Kleuren (hulpfuncties) ----------
+  function hexToRgb(h) {
+    h = String(h).replace("#", "");
+    if (h.length === 3) h = h.split("").map(c => c + c).join("");
+    const n = parseInt(h, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function rgba(h, a) {
+    const c = hexToRgb(h);
+    return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")";
+  }
+  // Dezelfde tint, maar lichter (voor de bovenkant van de achtergrond)
+  function lighten(h, amount) {
+    const c = hexToRgb(h).map(x => x / 255);
+    const mx = Math.max(c[0], c[1], c[2]), mn = Math.min(c[0], c[1], c[2]);
+    let hh = 0, s = 0, l = (mx + mn) / 2;
+    const d = mx - mn;
+    if (d > 0) {
+      s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+      if (mx === c[0]) hh = (c[1] - c[2]) / d + (c[1] < c[2] ? 6 : 0);
+      else if (mx === c[1]) hh = (c[2] - c[0]) / d + 2;
+      else hh = (c[0] - c[1]) / d + 4;
+      hh /= 6;
+    }
+    l = Math.min(0.98, l + amount);
+    const f = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    let r, g, b;
+    if (s === 0) { r = g = b = l; }
+    else {
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = f(p, q, hh + 1 / 3); g = f(p, q, hh); b = f(p, q, hh - 1 / 3);
+    }
+    return "rgb(" + [r, g, b].map(x => Math.round(x * 255)).join(",") + ")";
+  }
+
   // ---------- Instellingen ----------
   const DEFAULTS = {
+    v: 2,
     hideTime: false,
     inspection: false,
-    bg: "#111111",
+    bg: "#0b2d80",
     text: "#ffffff",
-    ready: "#4caf50",
-    holding: "#e53935",
-    timeSize: 5.5
+    ready: "#5be37d",
+    holding: "#ff5252",
+    timeSize: 9
   };
   const THEMES = {
-    dark:  { bg: "#111111", text: "#ffffff", ready: "#4caf50", holding: "#e53935" },
-    light: { bg: "#f5f5f5", text: "#222222", ready: "#2e7d32", holding: "#c62828" },
+    blue:  { bg: "#0b2d80", text: "#ffffff", ready: "#5be37d", holding: "#ff5252" },
+    dark:  { bg: "#14161c", text: "#ffffff", ready: "#5be37d", holding: "#ff5252" },
+    light: { bg: "#f2f4f8", text: "#1b2330", ready: "#1f9d4a", holding: "#d32f2f" },
     cube:  { bg: "#0d47a1", text: "#ffffff", ready: "#ffd600", holding: "#ff6d00" }
   };
   let settings = Object.assign({}, DEFAULTS, load("settings", {}));
+  if (settings.v !== DEFAULTS.v) { // nieuwe opmaak: kleuren en grootte van de tijd opnieuw instellen
+    settings = Object.assign({}, settings, {
+      v: DEFAULTS.v, bg: DEFAULTS.bg, text: DEFAULTS.text, ready: DEFAULTS.ready,
+      holding: DEFAULTS.holding, timeSize: DEFAULTS.timeSize
+    });
+  }
 
   const inputs = {
     hideTime: document.getElementById("hideTime"),
-    inspection: document.getElementById("inspection"),
     bg: document.getElementById("cBg"),
     text: document.getElementById("cText"),
     ready: document.getElementById("cReady"),
@@ -744,27 +863,33 @@
   };
 
   function applySettings() {
+    const c = hexToRgb(settings.bg);
+    const lum = (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255;
     root.style.setProperty("--bg", settings.bg);
+    root.style.setProperty("--bg-top", lighten(settings.bg, 0.2));
     root.style.setProperty("--text", settings.text);
     root.style.setProperty("--ready", settings.ready);
     root.style.setProperty("--holding", settings.holding);
+    root.style.setProperty("--muted", rgba(settings.text, 0.65));
+    root.style.setProperty("--panel", rgba(settings.text, 0.1));
+    root.style.setProperty("--line", rgba(settings.text, 0.2));
+    root.style.setProperty("--side-bg", lum > 0.6 ? "rgba(0,0,0,0.06)" : "rgba(0,0,0,0.25)");
     root.style.setProperty("--time-size", settings.timeSize + "rem");
     inputs.hideTime.checked = settings.hideTime;
-    inputs.inspection.checked = settings.inspection;
     inputs.bg.value = settings.bg;
     inputs.text.value = settings.text;
     inputs.ready.value = settings.ready;
     inputs.holding.value = settings.holding;
     inputs.timeSize.value = settings.timeSize;
+    inspBtn.textContent = "Inspectie 15s: " + (settings.inspection ? "aan" : "uit");
+    inspBtn.className = settings.inspection ? "pill on" : "pill";
     save("settings", settings);
   }
 
-  ["hideTime", "inspection"].forEach(k => {
-    inputs[k].addEventListener("change", e => {
-      settings[k] = e.target.checked;
-      applySettings();
-      e.target.blur();
-    });
+  inputs.hideTime.addEventListener("change", e => {
+    settings.hideTime = e.target.checked;
+    applySettings();
+    e.target.blur();
   });
   ["bg", "text", "ready", "holding"].forEach(k => {
     inputs[k].addEventListener("input", e => { settings[k] = e.target.value; applySettings(); });
@@ -785,8 +910,13 @@
     applySettings();
     e.target.blur();
   });
+  inspBtn.addEventListener("click", e => {
+    settings.inspection = !settings.inspection;
+    applySettings();
+    e.target.blur();
+  });
 
-  // ---------- Tijden en Ao5 (per puzzel apart bewaard) ----------
+  // ---------- Tijden, Ao5 en Ao12 (per puzzel apart bewaard) ----------
   function solvesKey(p) { return p === "333" ? "solves" : "solves_" + p; }
   function loadSolves(p) {
     return load(solvesKey(p), []).map(s =>
@@ -795,7 +925,8 @@
   }
   function saveSolves() { save(solvesKey(puzzle), solves); }
   let solves = loadSolves(puzzle);
-  let openIdx = null; // welke solve heeft zijn scramble uitgeklapt
+  let openIdx = null;   // welke solve heeft zijn opties open
+  let scrOpen = false;  // is bij die solve ook de scramble zichtbaar
 
   function eff(s) { return s.dnf ? Infinity : s.ms + (s.plus2 ? 2000 : 0); }
   function fmt(ms) { return (ms / 1000).toFixed(3); }
@@ -803,16 +934,20 @@
   function fmtSolve(s) { return s.dnf ? "DNF" : fmt(eff(s)) + (s.plus2 ? " (+2)" : ""); }
   function fmtLabel(s) {
     if (s.dnf) return "DNF" + (s.ms > 0 ? " (" + fmt(s.ms) + ")" : "");
-    return fmt(eff(s)) + " s" + (s.plus2 ? " (+2)" : "");
+    return fmt(eff(s)) + (s.plus2 ? " (+2)" : "");
   }
 
-  // Ao5 van de 5 solves die eindigen op index "end": beste en slechtste vallen weg,
-  // gemiddelde van de 3 overige. Bij 2 of meer DNF's is het resultaat DNF.
-  function ao5At(end) {
-    const vals = solves.slice(end - 4, end + 1).map(eff).sort((a, b) => a - b);
-    if (vals[3] === Infinity) return Infinity;
-    return (vals[1] + vals[2] + vals[3]) / 3;
+  // Gemiddelde van n solves die eindigen op index "end": de beste en slechtste vallen weg
+  // (1 bij Ao5 en Ao12). Te veel DNF's: het resultaat is DNF. Geeft null als er te weinig solves zijn.
+  function aoAt(end, n) {
+    if (end < n - 1) return null;
+    const drop = Math.ceil(n * 0.05);
+    const vals = solves.slice(end - n + 1, end + 1).map(eff).sort((a, b) => a - b);
+    const kept = vals.slice(drop, n - drop);
+    if (kept.some(v => v === Infinity)) return Infinity;
+    return kept.reduce((a, b) => a + b, 0) / kept.length;
   }
+  const ao5At = end => aoAt(end, 5);
 
   function mkBtn(text, action, index, on, title) {
     const b = document.createElement("button");
@@ -826,65 +961,76 @@
 
   function renderList() {
     listEl.innerHTML = "";
+    const finite = solves.map(eff).filter(v => v !== Infinity);
+    const bestVal = finite.length ? Math.min(...finite) : null;
     for (let i = solves.length - 1; i >= 0; i--) {
       const s = solves[i];
+      const open = openIdx === i;
       const li = document.createElement("li");
+      if (open) li.className = "open";
       const row = document.createElement("div");
-      row.className = "solveRow";
+      row.className = "gridRow solveRow";
+      row.dataset.index = String(i);
+      row.title = "Klik voor opties";
+      const idx = document.createElement("span");
+      idx.className = "idx";
+      idx.textContent = String(i + 1);
       const label = document.createElement("span");
-      label.className = "solveTime";
+      label.className = "solveTime" + (bestVal !== null && eff(s) === bestVal ? " best" : "");
       label.textContent = fmtLabel(s);
+      const ao = document.createElement("span");
+      ao.className = "rowAo";
+      const a5 = aoAt(i, 5);
+      ao.textContent = a5 === null ? "-" : fmtVal(a5);
+      row.appendChild(idx);
       row.appendChild(label);
-      row.appendChild(mkBtn("+2", "plus2", i, s.plus2, "Voeg 2 seconden straf toe"));
-      row.appendChild(mkBtn("DNF", "dnf", i, s.dnf, "Markeer als DNF"));
-      row.appendChild(mkBtn("Scramble", "scramble", i, openIdx === i, "Bekijk de scramble"));
-      row.appendChild(mkBtn("\u2715", "delete", i, false, "Verwijder deze tijd"));
+      row.appendChild(ao);
       li.appendChild(row);
-      if (openIdx === i) {
-        const box = document.createElement("div");
-        box.className = "scrambleBox";
-        if (s.scramble) {
-          box.appendChild(document.createTextNode(s.scramble));
-          box.appendChild(mkBtn("Opnieuw doen", "redo", i, false));
-        } else {
-          box.textContent = "De scramble van deze tijd is niet bewaard.";
+      if (open) {
+        const opts = document.createElement("div");
+        opts.className = "rowOpts";
+        opts.appendChild(mkBtn("+2", "plus2", i, s.plus2, "Voeg 2 seconden straf toe"));
+        opts.appendChild(mkBtn("DNF", "dnf", i, s.dnf, "Markeer als DNF"));
+        opts.appendChild(mkBtn("Verwijderen", "delete", i, false, "Verwijder deze tijd"));
+        opts.appendChild(mkBtn("Scramble", "scramble", i, scrOpen, "Bekijk de scramble"));
+        li.appendChild(opts);
+        if (scrOpen) {
+          const box = document.createElement("div");
+          box.className = "scrambleBox";
+          if (s.scramble) {
+            box.appendChild(document.createTextNode(s.scramble));
+            box.appendChild(mkBtn("Opnieuw doen", "redo", i, false));
+          } else {
+            box.textContent = "De scramble van deze tijd is niet bewaard.";
+          }
+          li.appendChild(box);
         }
-        li.appendChild(box);
       }
       listEl.appendChild(li);
     }
   }
 
-  function statRow(label, value) {
-    const row = document.createElement("div");
-    row.className = "stat";
-    const a = document.createElement("span");
-    a.textContent = label;
-    const b = document.createElement("span");
-    b.textContent = value;
-    row.appendChild(a);
-    row.appendChild(b);
-    return row;
-  }
-
   function renderStats() {
-    statsEl.innerHTML = "";
     const finite = solves.map(eff).filter(v => v !== Infinity);
-    const mean = finite.length ? fmt(finite.reduce((a, b) => a + b, 0) / finite.length) + " s" : "-";
-    const best = finite.length ? fmt(Math.min(...finite)) + " s" : "-";
-    let ao5 = "-", bestAo5 = "-";
-    if (solves.length >= 5) {
-      const current = ao5At(solves.length - 1);
-      let b = Infinity;
-      for (let i = 4; i < solves.length; i++) b = Math.min(b, ao5At(i));
-      ao5 = current === Infinity ? "DNF" : fmt(current) + " s";
-      bestAo5 = b === Infinity ? "DNF" : fmt(b) + " s";
-    }
-    statsEl.appendChild(statRow("Gemiddeld", mean));
-    statsEl.appendChild(statRow("Beste tijd", best));
-    statsEl.appendChild(statRow("Ao5", ao5));
-    statsEl.appendChild(statRow("Beste Ao5", bestAo5));
-    statsEl.appendChild(statRow("Aantal solves", String(solves.length)));
+    const mean = finite.length ? fmt(finite.reduce((a, b) => a + b, 0) / finite.length) : "-";
+    const best = finite.length ? fmt(Math.min(...finite)) : "-";
+    const curAo = n => {
+      const a = aoAt(solves.length - 1, n);
+      return a === null ? "-" : fmtVal(a);
+    };
+    const bestAo = n => {
+      let b = null;
+      for (let i = n - 1; i < solves.length; i++) {
+        const a = aoAt(i, n);
+        if (b === null || a < b) b = a;
+      }
+      return b === null ? "-" : fmtVal(b);
+    };
+    bsAo5.textContent = curAo(5);
+    bsAo12.textContent = curAo(12);
+    bsBest.textContent = best;
+    bsSolves.textContent = String(solves.length);
+    sumEl.textContent = "Beste ao5 " + bestAo(5) + "  \u00b7  Beste ao12 " + bestAo(12) + "  \u00b7  Gemiddeld " + mean;
   }
 
   function render() {
@@ -910,6 +1056,96 @@
     deltaEl.className = d > 0 ? "slower" : "faster";
   }
 
+  // ---------- Dagelijkse scramble (3x3x3, elke dag anders, 1 poging per dag) ----------
+  const DAY_NAMES = ["ZO", "MA", "DI", "WO", "DO", "VR", "ZA"];
+  const MONTH_NAMES = ["JAN", "FEB", "MRT", "APR", "MEI", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEC"];
+  let daily = load("daily", null);   // { date, started, ms, plus2, dnf, scramble }
+  let dailyActive = false;           // de dagelijkse scramble staat klaar of wordt nu opgelost
+
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function dateLabel() {
+    const d = new Date();
+    return DAY_NAMES[d.getDay()] + " " + d.getDate() + " " + MONTH_NAMES[d.getMonth()];
+  }
+  function hashStr(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  // Dezelfde scramble voor de hele dag, een andere scramble op een andere dag
+  function dailyScramble(key) {
+    key = key || todayKey();
+    return genCubeScramble(["R", "L", "U", "D", "F", "B"], 20, mulberry32(hashStr("cubetimer-daily-" + key)));
+  }
+  function dailyToday() { return daily && daily.date === todayKey() ? daily : null; }
+
+  function renderDaily() {
+    const d = dailyToday();
+    dailyDate.textContent = "DAGELIJKSE SCRAMBLE \u00b7 " + dateLabel();
+    if (d && d.ms !== undefined) {
+      const res = d.dnf ? "DNF" : fmt(d.ms + (d.plus2 ? 2000 : 0)) + " s" + (d.plus2 ? " (+2)" : "");
+      dailyTitle.textContent = "Vandaag: " + res;
+      dailySub.textContent = "Morgen is er weer een nieuwe scramble.";
+      dailyBtn.textContent = "Gedaan voor vandaag";
+      dailyBtn.disabled = true;
+    } else if (dailyActive) {
+      dailyTitle.textContent = "Los de scramble op";
+      dailySub.textContent = "Dit is je enige poging van vandaag.";
+      dailyBtn.textContent = "Bezig...";
+      dailyBtn.disabled = true;
+    } else if (d) {
+      dailyTitle.textContent = "Je poging van vandaag is gebruikt";
+      dailySub.textContent = "Morgen is er weer een nieuwe scramble.";
+      dailyBtn.textContent = "Gedaan voor vandaag";
+      dailyBtn.disabled = true;
+    } else {
+      dailyTitle.textContent = "E\u00e9n poging met de scramble van vandaag";
+      dailySub.textContent = "3x3x3 \u00b7 elke dag een nieuwe";
+      dailyBtn.textContent = "Doe mee";
+      dailyBtn.disabled = false;
+    }
+  }
+
+  function startDaily() {
+    if (state !== "idle" || dailyActive || dailyToday()) return;
+    if (puzzle !== "333") switchPuzzle("333");
+    setScramble(dailyScramble());
+    dailyActive = true;
+    renderDaily();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  // De poging telt vanaf het moment dat de inspectie of de solve begint
+  function dailyMarkStarted() {
+    if (!dailyActive) return;
+    daily = { date: todayKey(), started: true };
+    save("daily", daily);
+    renderDaily();
+  }
+  function dailyFinish(solve) {
+    if (!dailyActive) return;
+    daily = { date: todayKey(), started: true, ms: solve.ms, plus2: !!solve.plus2, dnf: !!solve.dnf, scramble: solve.scramble };
+    save("daily", daily);
+    dailyActive = false;
+    renderDaily();
+  }
+  dailyBtn.addEventListener("click", e => {
+    startDaily();
+    e.target.blur();
+  });
+  const dailyTimer = setInterval(renderDaily, 60000); // nieuwe dag: kaart ververst vanzelf
+  if (dailyTimer && dailyTimer.unref) dailyTimer.unref();
+
   // ---------- Timer ----------
   // Toestanden: idle, inspecting, holding, ready, running
   let state = "idle";
@@ -933,6 +1169,7 @@
   }
 
   function startInspection() {
+    dailyMarkStarted();
     state = "inspecting";
     inspectStart = performance.now();
     timeEl.className = "";
@@ -947,8 +1184,10 @@
     inspectStart = null;
     state = "idle";
     timeEl.className = "";
-    solves.push({ ms: 0, plus2: false, dnf: true, scramble: currentScramble });
+    const dnfSolve = { ms: 0, plus2: false, dnf: true, scramble: currentScramble };
+    solves.push(dnfSolve);
     saveSolves();
+    dailyFinish(dnfSolve);
     timeEl.textContent = "DNF";
     render();
     renderDelta();
@@ -972,6 +1211,7 @@
     const solve = { ms: t, plus2: penalty > 0, dnf: false, scramble: currentScramble };
     solves.push(solve);
     saveSolves();
+    dailyFinish(solve);
     state = "idle";
     timeEl.textContent = fmtSolve(solve);
     render();
@@ -999,6 +1239,7 @@
         penalty = el >= 15 ? 2000 : 0; // tussen 15 en 17 seconden: +2
         inspectStart = null;
       }
+      dailyMarkStarted();
       state = "running";
       startTime = performance.now();
       startLoop();
@@ -1009,9 +1250,9 @@
     }
   }
 
-  // Aanraking van de balk, knoppen en instellingen start de timer niet (en blokkeert scrollen niet)
+  // Aanraking van de balken, knoppen en instellingen start de timer niet (en blokkeert scrollen niet)
   function isControl(el) {
-    return el.closest && el.closest("button, input, label, summary, details, #side, #cube");
+    return el.closest && el.closest("button, input, label, summary, details, #side, #cube, #topBar");
   }
 
   // Spatie is altijd voor de timer: nooit scrollen en nooit per ongeluk een knop indrukken
@@ -1058,17 +1299,25 @@
   function handleSolveAction(action, i) {
     const s = solves[i];
     if (!s) return;
-    if (action === "plus2") {
+    if (action === "toggle") {          // klik op een tijd: opties tonen of verbergen
+      openIdx = openIdx === i ? null : i;
+      scrOpen = false;
+      render();
+      return;
+    } else if (action === "plus2") {
       s.plus2 = !s.plus2;
     } else if (action === "dnf") {
       s.dnf = !s.dnf;
     } else if (action === "scramble") {
-      openIdx = openIdx === i ? null : i;
+      openIdx = i;
+      scrOpen = !scrOpen;
+      render();
+      return;
     } else if (action === "delete") {
       if (!confirm("Deze tijd verwijderen?")) return;
       solves.splice(i, 1);
-      if (openIdx === i) openIdx = null;
-      else if (openIdx !== null && openIdx > i) openIdx--;
+      openIdx = null;
+      scrOpen = false;
     } else if (action === "redo") {
       if (state !== "idle" || !s.scramble) return;
       setScramble(s.scramble);
@@ -1080,9 +1329,14 @@
   }
 
   listEl.addEventListener("click", e => {
-    const b = e.target.closest ? e.target.closest("button") : null;
-    if (!b || !b.dataset.action) return;
-    handleSolveAction(b.dataset.action, parseInt(b.dataset.index, 10));
+    const t = e.target;
+    const b = t.closest ? t.closest("button") : null;
+    if (b && b.dataset.action) {
+      handleSolveAction(b.dataset.action, parseInt(b.dataset.index, 10));
+      return;
+    }
+    const row = t.closest ? t.closest(".solveRow") : null;
+    if (row && row.dataset.index !== undefined) handleSolveAction("toggle", parseInt(row.dataset.index, 10));
   });
 
   document.getElementById("newScramble").addEventListener("click", e => {
@@ -1095,38 +1349,37 @@
     if (!confirm("Alle tijden van " + PUZZLES[puzzle].name + " wissen?")) return;
     solves = [];
     openIdx = null;
+    scrOpen = false;
     saveSolves();
     timeEl.textContent = "0.000";
     render();
     renderDelta();
   });
 
-  // ---------- Puzzel kiezen ----------
+  // ---------- Puzzel kiezen (balk linksboven) ----------
+  function buildPuzzleBar() {
+    puzzleBar.innerHTML = "";
+    Object.keys(PUZZLES).forEach(key => {
+      const b = document.createElement("button");
+      b.textContent = PUZZLES[key].short;
+      b.dataset.puzzle = key;
+      if (key === puzzle) b.className = "on";
+      puzzleBar.appendChild(b);
+    });
+  }
+
   function updateTitle() {
-    puzzleBtn.textContent = PUZZLES[puzzle].name + " \u25BE";
+    buildPuzzleBar();
     document.title = PUZZLES[puzzle].name + " Timer";
   }
 
-  function buildMenu() {
-    puzzleMenu.innerHTML = "";
-    Object.keys(PUZZLES).forEach(key => {
-      const b = document.createElement("button");
-      b.textContent = PUZZLES[key].name;
-      b.dataset.puzzle = key;
-      if (key === puzzle) b.className = "on";
-      puzzleMenu.appendChild(b);
-    });
-  }
-  function openMenu() { buildMenu(); puzzleMenu.hidden = false; }
-  function closeMenu() { puzzleMenu.hidden = true; }
-
   function switchPuzzle(p) {
-    closeMenu();
     if (state !== "idle" || !PUZZLES[p] || p === puzzle) return;
     puzzle = p;
     save("puzzle", puzzle);
     solves = loadSolves(puzzle);
     openIdx = null;
+    scrOpen = false;
     timeEl.className = "";
     timeEl.textContent = solves.length ? fmtSolve(solves[solves.length - 1]) : "0.000";
     updateTitle();
@@ -1135,23 +1388,27 @@
     newScramble();
   }
 
-  puzzleBtn.addEventListener("click", e => {
-    if (puzzleMenu.hidden) openMenu(); else closeMenu();
-    e.target.blur();
-  });
-  puzzleMenu.addEventListener("click", e => {
+  puzzleBar.addEventListener("click", e => {
     const b = e.target.closest ? e.target.closest("button") : null;
     if (b && b.dataset.puzzle) switchPuzzle(b.dataset.puzzle);
   });
-  document.addEventListener("click", e => {
-    if (!e.target.closest || !e.target.closest("#titleWrap")) closeMenu();
-  });
+
+  // ---------- Plek van de 2D afbeelding ----------
+  // Computer: naast de scramble. Telefoon: rechts van de tijd.
+  function placeCube() {
+    const mobile = !!(window.matchMedia && window.matchMedia("(max-width: 800px)").matches);
+    const target = document.getElementById(mobile ? "timeRow" : "scrambleRow");
+    if (target && cubeEl.parentNode !== target) target.appendChild(cubeEl);
+  }
+  window.addEventListener("resize", placeCube);
 
   // ---------- Start ----------
   applySettings();
   updateTitle();
   newScramble();
   render();
+  renderDaily();
+  placeCube();
 </script>
 </body>
 </html>
