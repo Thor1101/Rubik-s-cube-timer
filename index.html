@@ -20,6 +20,7 @@
     --side-bg: rgba(0, 0, 0, 0.25);
     --sidebar-w: clamp(300px, 23vw, 350px);
     --side-left-w: clamp(220px, 17vw, 270px);
+    --pink: #ff7eb9;
     --time-size: 9rem;
     --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
@@ -95,11 +96,21 @@
           padding: 10px; background: var(--side-bg); z-index: 5; text-align: left; }
 
   /* ---------- Balk links (smaller dan de balk rechts) ---------- */
-  #sideLeft { position: fixed; top: 0; left: 0; bottom: 0; width: var(--side-left-w); padding: 10px; background: var(--side-bg);
-              z-index: 5; text-align: left; }
+  #sideLeft { position: fixed; top: 0; left: 0; bottom: 0; width: var(--side-left-w); padding: 12px 10px; background: var(--side-bg);
+              z-index: 5; text-align: left; display: flex; flex-direction: column; gap: 14px; }
+  .brand { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; background: none; border: none; outline: none;
+           padding: 6px 8px; margin: 0; border-radius: 12px; color: var(--text); cursor: pointer; text-align: left; }
+  .brand:hover { background: var(--panel); }
+  .brandText { font-size: 1.25rem; font-weight: 800; letter-spacing: 0.01em; }
+  .brandLogo { width: 52px; height: 52px; display: block; }
+  #sideNav { display: flex; flex-direction: column; gap: 6px; }
+  .navItem { display: block; width: 100%; text-align: left; border: none; outline: none; background: transparent; color: var(--text);
+             border-radius: 12px; padding: 10px 14px; margin: 0; font-size: 0.95rem; font-weight: 700; }
+  .navItem:hover { background: var(--panel); }
+  .navItem.active { background: var(--pink); color: #0b2a78; }
 
   /* Dagelijkse scramble */
-  #dailyCard { flex: none; background: #ffd22e; color: #0b2a78; border-radius: 14px; padding: 12px; }
+  #dailyCard { flex: none; background: var(--pink); color: #0b2a78; border-radius: 14px; padding: 12px; }
   .dTop { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; }
   .dTitle { font-size: 1.1rem; font-weight: 800; line-height: 1.2; margin: 6px 0 4px; }
   .dSub { font-size: 0.72rem; opacity: 0.75; margin-bottom: 10px; min-height: 1em; }
@@ -224,7 +235,15 @@
     </div>
   </main>
 
-  <aside id="sideLeft" aria-label="Linkerbalk"></aside>
+  <aside id="sideLeft" aria-label="Menu">
+    <button id="brandBtn" class="brand" title="Naar de timer" aria-label="TWC Timer, naar de timer">
+      <span class="brandText">TWC Timer</span>
+      <svg class="brandLogo" viewBox="-2.75 -3.1 5.5 6.2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g stroke="#0a1d5c" stroke-width="0.14" stroke-linejoin="round"><polygon points="0.000,-0.000 -0.866,-0.500 0.000,-1.000 0.866,-0.500" fill="#ffd500"/><polygon points="0.866,-0.500 0.000,-1.000 0.866,-1.500 1.732,-1.000" fill="#ffd500"/><polygon points="1.732,-1.000 0.866,-1.500 1.732,-2.000 2.598,-1.500" fill="#ffd500"/><polygon points="-0.866,-0.500 -1.732,-1.000 -0.866,-1.500 0.000,-1.000" fill="#ffd500"/><polygon points="0.000,-1.000 -0.866,-1.500 0.000,-2.000 0.866,-1.500" fill="#ffd500"/><polygon points="0.866,-1.500 0.000,-2.000 0.866,-2.500 1.732,-2.000" fill="#ffd500"/><polygon points="-1.732,-1.000 -2.598,-1.500 -1.732,-2.000 -0.866,-1.500" fill="#ffd500"/><polygon points="-0.866,-1.500 -1.732,-2.000 -0.866,-2.500 0.000,-2.000" fill="#ffd500"/><polygon points="0.000,-2.000 -0.866,-2.500 0.000,-3.000 0.866,-2.500" fill="#ffd500"/><polygon points="0.000,0.000 -0.866,-0.500 -0.866,0.500 0.000,1.000" fill="#009b48"/><polygon points="0.000,1.000 -0.866,0.500 -0.866,1.500 0.000,2.000" fill="#009b48"/><polygon points="0.000,2.000 -0.866,1.500 -0.866,2.500 0.000,3.000" fill="#009b48"/><polygon points="-0.866,-0.500 -1.732,-1.000 -1.732,0.000 -0.866,0.500" fill="#009b48"/><polygon points="-0.866,0.500 -1.732,0.000 -1.732,1.000 -0.866,1.500" fill="#009b48"/><polygon points="-0.866,1.500 -1.732,1.000 -1.732,2.000 -0.866,2.500" fill="#009b48"/><polygon points="-1.732,-1.000 -2.598,-1.500 -2.598,-0.500 -1.732,0.000" fill="#009b48"/><polygon points="-1.732,0.000 -2.598,-0.500 -2.598,0.500 -1.732,1.000" fill="#009b48"/><polygon points="-1.732,1.000 -2.598,0.500 -2.598,1.500 -1.732,2.000" fill="#009b48"/><polygon points="0.000,0.000 0.866,-0.500 0.866,0.500 0.000,1.000" fill="#e53935"/><polygon points="0.000,1.000 0.866,0.500 0.866,1.500 0.000,2.000" fill="#e53935"/><polygon points="0.000,2.000 0.866,1.500 0.866,2.500 0.000,3.000" fill="#e53935"/><polygon points="0.866,-0.500 1.732,-1.000 1.732,0.000 0.866,0.500" fill="#e53935"/><polygon points="0.866,0.500 1.732,0.000 1.732,1.000 0.866,1.500" fill="#e53935"/><polygon points="0.866,1.500 1.732,1.000 1.732,2.000 0.866,2.500" fill="#e53935"/><polygon points="1.732,-1.000 2.598,-1.500 2.598,-0.500 1.732,0.000" fill="#e53935"/><polygon points="1.732,0.000 2.598,-0.500 2.598,0.500 1.732,1.000" fill="#e53935"/><polygon points="1.732,1.000 2.598,0.500 2.598,1.500 1.732,2.000" fill="#e53935"/></g></svg>
+    </button>
+    <nav id="sideNav">
+      <button id="navTimer" class="navItem active" data-view="timer">Timer</button>
+    </nav>
+  </aside>
 
   <aside id="side">
     <div id="dailyCard">
@@ -260,6 +279,8 @@
   const dailyTitle = document.getElementById("dailyTitle");
   const dailySub = document.getElementById("dailySub");
   const dailyBtn = document.getElementById("dailyBtn");
+  const brandBtn = document.getElementById("brandBtn");
+  const navTimer = document.getElementById("navTimer");
   const root = document.documentElement;
 
   // ---------- Opslag (veilig, werkt ook als opslag geblokkeerd is) ----------
@@ -1436,6 +1457,24 @@
   window.addEventListener("load", alignScrambleRow);
   if (document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(alignScrambleRow);
 
+  // ---------- Navigatie (balk links) ----------
+  // Nu is er alleen de timer; 'TWC Timer' en het vak 'Timer' brengen je er direct naartoe.
+  let view = "timer";
+  function showView(v, scroll) {
+    view = v;
+    document.body.dataset.view = v;
+    navTimer.className = v === "timer" ? "navItem active" : "navItem";
+    if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function goHome(e) {
+    const det = document.querySelector("details");
+    if (det) det.open = false; // instellingen dicht
+    showView("timer", true);
+    if (e && e.currentTarget && e.currentTarget.blur) e.currentTarget.blur();
+  }
+  brandBtn.addEventListener("click", goHome);
+  navTimer.addEventListener("click", goHome);
+
   // ---------- Start ----------
   applySettings();
   updateTitle();
@@ -1443,6 +1482,7 @@
   render();
   renderDaily();
   placeCube();
+  showView("timer", false);
 </script>
 </body>
 </html>
