@@ -18,7 +18,8 @@
     --panel: rgba(255, 255, 255, 0.10);
     --line: rgba(255, 255, 255, 0.20);
     --side-bg: rgba(0, 0, 0, 0.25);
-    --sidebar-w: clamp(330px, 26vw, 390px);
+    --sidebar-w: clamp(300px, 23vw, 350px);
+    --side-left-w: clamp(220px, 17vw, 270px);
     --time-size: 9rem;
     --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
@@ -29,116 +30,124 @@
          background-image: linear-gradient(180deg, var(--bg-top) 0%, var(--bg) 75%);
          background-attachment: fixed; min-height: 100vh; }
   button { font-family: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line);
-           border-radius: 8px; padding: 8px 14px; cursor: pointer; font-size: 0.9rem; }
+           border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 0.85rem; }
   button:hover { border-color: var(--text); }
 
   /* ---------- Hoofdgedeelte ---------- */
-  #main { margin-right: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; padding: 16px 28px 8px; text-align: center; }
-  #topBar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-  #topRight { display: flex; align-items: center; gap: 10px; }
-  #puzzleBar { display: inline-flex; background: var(--text); border-radius: 14px; padding: 4px; gap: 2px; max-width: 100%; overflow-x: auto; }
-  #puzzleBar button { background: none; border: none; color: var(--bg); opacity: 0.7; font-weight: 700; padding: 10px 16px;
-                      border-radius: 10px; font-size: 0.95rem; white-space: nowrap; }
+  #main { margin-left: var(--side-left-w); margin-right: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column;
+          padding: 12px 20px 6px; text-align: center; }
+  #topBar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #topRight { display: flex; align-items: center; gap: 8px; }
+  #puzzleBar { display: inline-flex; background: var(--text); border-radius: 12px; padding: 3px; gap: 2px; max-width: 100%; overflow-x: auto; }
+  #puzzleBar button { background: none; border: none; color: var(--bg); opacity: 0.7; font-weight: 700; padding: 7px 12px;
+                      border-radius: 9px; font-size: 0.85rem; white-space: nowrap; }
   #puzzleBar button:hover { opacity: 1; }
   #puzzleBar button.on { background: var(--bg); color: var(--text); opacity: 1; }
-  .pill { background: var(--text); color: var(--bg); border: 2px solid var(--text); border-radius: 999px; padding: 9px 20px; font-weight: 700; font-size: 0.9rem; }
+  .pill { background: var(--text); color: var(--bg); border: 2px solid var(--text); border-radius: 999px; padding: 6px 16px; font-weight: 700; font-size: 0.8rem; }
   .pill:hover { opacity: 0.92; }
   .pill.on { background: var(--ready); border-color: var(--ready); color: #0b1020; }
 
   /* Instellingen: kleine ronde knop links van de inspectie-knop */
-  details { position: relative; flex: none; width: 38px; height: 38px; }
-  summary { list-style: none; cursor: pointer; user-select: none; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
-            font-size: 1.15rem; border: 1px solid var(--line); border-radius: 50%; background: var(--panel); color: var(--text); }
+  details { position: relative; flex: none; width: 34px; height: 34px; }
+  summary { list-style: none; cursor: pointer; user-select: none; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; border: 1px solid var(--line); border-radius: 50%; background: var(--panel); color: var(--text); }
   summary::-webkit-details-marker { display: none; }
   summary:hover { border-color: var(--text); }
-  .panel { position: absolute; top: 46px; right: 0; z-index: 40; width: 320px; max-width: calc(100vw - 24px); max-height: calc(100vh - 80px); overflow-y: auto;
-           padding: 4px 14px 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; font-size: 0.9rem; text-align: left; }
-  .panel button { padding: 6px 10px; font-size: 0.85rem; }
-  .row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin: 12px 0; gap: 8px 12px; }
-  input[type="color"] { width: 50px; height: 30px; border: 0; background: none; padding: 0; cursor: pointer; }
-  input[type="range"] { width: 150px; }
+  .panel { position: absolute; top: 40px; right: 0; z-index: 40; width: 300px; max-width: calc(100vw - 24px); max-height: calc(100vh - 70px); overflow-y: auto;
+           padding: 2px 12px 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; font-size: 0.85rem; text-align: left; }
+  .panel button { padding: 5px 9px; font-size: 0.8rem; }
+  .row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin: 9px 0; gap: 6px 10px; }
+  input[type="color"] { width: 44px; height: 26px; border: 0; background: none; padding: 0; cursor: pointer; }
+  input[type="range"] { width: 130px; }
 
-  #center { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 4vh 0 0; }
-  #scrambleRow { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 20px clamp(48px, 10.8vw, 140px); max-width: 100%; }
-  #scramble { flex: 0 1 560px; font-family: var(--mono); font-weight: 700; font-size: 1.5rem; line-height: 1.6;
-              letter-spacing: 0.1em; white-space: pre-line; }
-  #scramble.long { font-size: 1.15rem; letter-spacing: 0.04em; }
-  #scramble.mega { font-size: 0.85rem; letter-spacing: 0.02em; }
-  .link { background: none; border: none; color: var(--text); font-weight: 600; opacity: 0.85; padding: 6px 10px; font-size: 0.95rem; margin-top: 10px; }
+  #center { flex: none; display: flex; flex-direction: column; align-items: center; padding: clamp(14px, 3vh, 30px) 0 0; }
+  #scrambleRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; column-gap: 16px; width: 100%; }
+  #scrambleCol { display: flex; flex-direction: column; align-items: center; justify-self: center; width: 100%; max-width: 420px; }
+  #scramble { width: 100%; font-family: var(--mono); font-weight: 700; font-size: 1.3rem; line-height: 1.5;
+              letter-spacing: 0.08em; white-space: pre-line; }
+  #scramble.long { font-size: 1rem; letter-spacing: 0.03em; }
+  #scramble.mega { font-size: 0.78rem; letter-spacing: 0.02em; }
+  .link { background: none; border: none; color: var(--text); font-weight: 600; opacity: 0.85; padding: 4px 8px; font-size: 0.85rem; margin-top: 0; }
   .link:hover { opacity: 1; }
 
-  #timeRow { margin: auto 0; }
-  #time { font-family: var(--mono); font-weight: 800; font-size: var(--time-size); line-height: 1.05; margin: 12px 0 0;
+  #timeRow { margin: 0; }
+  #time { font-family: var(--mono); font-weight: 800; font-size: min(calc(var(--time-size) * 0.8), 11vw); line-height: 0.95; margin: 0;
           font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
   #time.ready { color: var(--ready); }
   #time.holding { color: var(--holding); }
-  #delta { font-family: var(--mono); font-size: 1.9rem; font-weight: 700; min-height: 2.6rem; font-variant-numeric: tabular-nums; }
+  #delta { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; min-height: 2rem; font-variant-numeric: tabular-nums; }
   #delta.slower { color: #ff5252; }
   #delta.faster { color: #4cdf72; }
   #delta.even { color: var(--muted); }
 
-  /* 2D afbeelding: zelfde formaat en plek als in je voorbeeld (rechts naast de scramble) */
-  #cube { flex: 0 0 auto; width: clamp(115px, 11.4vw, 175px); }
-  #cube.mid { width: clamp(110px, 10.8vw, 165px); }
-  #cube.wide { width: clamp(200px, 20vw, 300px); }
+  /* 2D afbeelding: rechts naast de scramble */
+  #cube { flex: 0 0 auto; justify-self: end; margin-right: -10px; width: clamp(260px, 25vw, 400px); }
+  #cube.mid { width: clamp(100px, 9.5vw, 150px); }
+  #cube.wide { width: clamp(180px, 17vw, 260px); }
   #cube svg { width: 100%; height: auto; display: block; }
 
-  #bottomStats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 18px 0 14px; }
-  .bs .l { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
-  .bs .v { font-size: 1.7rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  #bottomStats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px 0 8px; }
+  .bs .l { font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .bs .v { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 
   /* ---------- Balk rechts ---------- */
-  #side { position: fixed; top: 0; right: 0; bottom: 0; width: var(--sidebar-w); display: flex; flex-direction: column; gap: 14px;
-          padding: 14px; background: var(--side-bg); z-index: 5; text-align: left; }
+  #side { position: fixed; top: 0; right: 0; bottom: 0; width: var(--sidebar-w); display: flex; flex-direction: column; gap: 10px;
+          padding: 10px; background: var(--side-bg); z-index: 5; text-align: left; }
+
+  /* ---------- Balk links (smaller dan de balk rechts) ---------- */
+  #sideLeft { position: fixed; top: 0; left: 0; bottom: 0; width: var(--side-left-w); padding: 10px; background: var(--side-bg);
+              z-index: 5; text-align: left; }
 
   /* Dagelijkse scramble */
-  #dailyCard { flex: none; background: #ffd22e; color: #0b2a78; border-radius: 16px; padding: 16px; }
-  .dTop { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; }
-  .dTitle { font-size: 1.3rem; font-weight: 800; line-height: 1.2; margin: 8px 0 6px; }
-  .dSub { font-size: 0.8rem; opacity: 0.75; margin-bottom: 12px; min-height: 1em; }
-  #dailyBtn { display: block; width: 100%; background: #0b2a78; color: #ffffff; border: none; border-radius: 12px; padding: 14px; font-weight: 800; font-size: 1rem; margin: 0; }
+  #dailyCard { flex: none; background: #ffd22e; color: #0b2a78; border-radius: 14px; padding: 12px; }
+  .dTop { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; }
+  .dTitle { font-size: 1.1rem; font-weight: 800; line-height: 1.2; margin: 6px 0 4px; }
+  .dSub { font-size: 0.72rem; opacity: 0.75; margin-bottom: 10px; min-height: 1em; }
+  #dailyBtn { display: block; width: 100%; background: #0b2a78; color: #ffffff; border: none; border-radius: 10px; padding: 10px; font-weight: 800; font-size: 0.9rem; margin: 0; }
   #dailyBtn:hover { border: none; opacity: 0.92; }
   #dailyBtn:disabled { opacity: 0.45; cursor: default; }
 
   #bar { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  .gridRow { display: grid; grid-template-columns: 26px minmax(0, 1fr) 80px; align-items: center; column-gap: 6px; }
-  #sideHead { font-size: 0.7rem; letter-spacing: 0.12em; font-weight: 700; color: var(--muted); padding: 4px 0 8px; }
+  .gridRow { display: grid; grid-template-columns: 22px minmax(0, 1fr) 64px; align-items: center; column-gap: 4px; }
+  #sideHead { font-size: 0.62rem; letter-spacing: 0.12em; font-weight: 700; color: var(--muted); padding: 2px 0 6px; }
   #sideHead span:nth-child(3) { text-align: right; }
-  #sumLine { font-size: 0.75rem; color: var(--muted); padding: 8px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  #sumLine { font-size: 0.66rem; color: var(--muted); padding: 6px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
   #times { flex: 1; min-height: 0; overflow-y: auto; margin: 0; padding: 0; list-style: none; scrollbar-width: none; }
   #times::-webkit-scrollbar { display: none; }
-  #times li { padding: 4px 0; border-bottom: 1px solid var(--line); }
-  .solveRow { cursor: pointer; border-radius: 6px; padding: 6px 4px; margin: 0 -4px; }
+  #times li { padding: 2px 0; border-bottom: 1px solid var(--line); }
+  .solveRow { cursor: pointer; border-radius: 6px; padding: 4px; margin: 0 -4px; }
   .solveRow:hover, #times li.open .solveRow { background: var(--panel); }
-  .idx { color: var(--muted); font-size: 0.75rem; }
-  .solveTime { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .idx { color: var(--muted); font-size: 0.68rem; }
+  .solveTime { font-weight: 700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
   .solveTime.best { color: var(--ready); }
-  .rowAo { text-align: right; color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
-  .rowOpts { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 0 6px 30px; }
-  #times button { padding: 5px 10px; font-size: 0.75rem; border-radius: 8px; white-space: nowrap; }
+  .rowAo { text-align: right; color: var(--muted); font-size: 0.76rem; font-variant-numeric: tabular-nums; }
+  .rowOpts { display: flex; flex-wrap: wrap; gap: 5px; padding: 4px 0 4px 26px; }
+  #times button { padding: 4px 8px; font-size: 0.7rem; border-radius: 7px; white-space: nowrap; }
   #times button.on { background: var(--text); color: var(--bg); }
-  .scrambleBox { margin: 2px 0 6px 30px; font-family: var(--mono); font-size: 0.75rem; line-height: 1.6; color: var(--muted); white-space: pre-line; }
-  .scrambleBox button { display: block; margin-top: 8px; }
-  #clear { flex: none; width: 100%; margin: 10px 0 0; font-size: 0.85rem; padding: 8px; }
+  .scrambleBox { margin: 2px 0 4px 26px; font-family: var(--mono); font-size: 0.7rem; line-height: 1.5; color: var(--muted); white-space: pre-line; }
+  .scrambleBox button { display: block; margin-top: 6px; }
+  #clear { flex: none; width: 100%; margin: 8px 0 0; font-size: 0.8rem; padding: 6px; }
 
-  /* ---------- Smal scherm (telefoon) ---------- */
+  /* ---------- Smal scherm (telefoon): geen linkerbalk ---------- */
   @media (max-width: 800px) {
-    #main { margin-right: 0; min-height: 0; padding: 12px 14px; }
+    #main { margin-left: 0; margin-right: 0; min-height: 0; padding: 12px 14px; }
+    #sideLeft { display: none; }
     #side { position: static; width: auto; max-width: 520px; margin: 8px auto 20px; background: transparent; padding: 12px 14px; }
     #times { max-height: 50vh; }
     .panel { position: fixed; top: 12px; left: 12px; right: 12px; width: auto; max-height: calc(100vh - 24px); }
     #center { padding-top: 12px; }
-    #scrambleRow { flex-direction: column; }
-    #scramble { font-size: 1.15rem; }
+    #scrambleRow { display: block; }
+    #scrambleCol { max-width: 100%; }
+    #scramble { max-width: 100%; font-size: 1.05rem; }
     /* op een telefoon staat de afbeelding rechts van de tijd */
     #timeRow { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 10px 0; }
     #timeBox { flex: 1 1 auto; min-width: 0; }
     #time { font-size: calc(var(--time-size) * 0.45); }
-    #delta { font-size: 1.3rem; min-height: 1.8rem; }
-    #cube { width: min(40vw, 200px); }
+    #delta { font-size: 1.2rem; min-height: 1.6rem; }
+    #cube { width: min(40vw, 200px); margin-right: 0; }
     #cube.mid { width: min(42vw, 200px); }
     #cube.wide { width: min(46vw, 230px); }
-    .bs .v { font-size: 1.2rem; }
+    .bs .v { font-size: 1.1rem; }
   }
 </style>
 </head>
@@ -192,10 +201,12 @@
 
     <div id="center">
       <div id="scrambleRow">
-        <div id="scramble"></div>
+        <div id="scrambleCol">
+          <div id="scramble"></div>
+          <button id="newScramble" class="link">Nieuwe scramble &#8635;</button>
+        </div>
         <div id="cube"></div>
       </div>
-      <button id="newScramble" class="link">Nieuwe scramble &#8635;</button>
 
       <div id="timeRow">
         <div id="timeBox">
@@ -212,6 +223,8 @@
       <div class="bs"><div class="l">Solves</div><div class="v" id="bsSolves">0</div></div>
     </div>
   </main>
+
+  <aside id="sideLeft" aria-label="Linkerbalk"></aside>
 
   <aside id="side">
     <div id="dailyCard">
@@ -779,6 +792,7 @@
     scrambleEl.textContent = scr;
     scrambleEl.className = puzzle === "mega" ? "mega" : scr.length > 60 ? "long" : "";
     renderCube(scr);
+    alignScrambleRow();
   }
 
   function newScramble() {
@@ -1252,7 +1266,7 @@
 
   // Aanraking van de balken, knoppen en instellingen start de timer niet (en blokkeert scrollen niet)
   function isControl(el) {
-    return el.closest && el.closest("button, input, label, summary, details, #side, #cube, #topBar");
+    return el.closest && el.closest("button, input, label, summary, details, #side, #sideLeft, #cube, #topBar");
   }
 
   // Spatie is altijd voor de timer: nooit scrollen en nooit per ongeluk een knop indrukken
@@ -1399,8 +1413,28 @@
     const mobile = !!(window.matchMedia && window.matchMedia("(max-width: 800px)").matches);
     const target = document.getElementById(mobile ? "timeRow" : "scrambleRow");
     if (target && cubeEl.parentNode !== target) target.appendChild(cubeEl);
+    alignScrambleRow();
   }
+
+  // De zetten blijven op hun plek (in het midden van de rij, zoals eerst). De afbeelding wordt omlaag geschoven,
+  // zodat de bovenkant van de afbeelding op dezelfde hoogte staat als de bovenkant van de zetten.
+  function alignScrambleRow() {
+    const row = document.getElementById("scrambleRow");
+    const mobile = !!(window.matchMedia && window.matchMedia("(max-width: 800px)").matches);
+    let pad = 0, mt = 0;
+    if (!mobile && cubeEl.parentNode === row) {
+      const hi = Number(cubeEl.offsetHeight) || 0;     // hoogte van de afbeelding
+      const ht = Number(scrambleEl.offsetHeight) || 0; // hoogte van de zetten
+      if (hi > ht) pad = 0;               // grote afbeelding: bovenkant op één lijn met de zetten, geen extra ruimte erboven
+      else mt = (ht - hi) / 2;            // kleine afbeelding: in het midden naast de tekst
+    }
+    row.style.paddingTop = pad + "px";
+    cubeEl.style.marginTop = mt + "px";
+  }
+
   window.addEventListener("resize", placeCube);
+  window.addEventListener("load", alignScrambleRow);
+  if (document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(alignScrambleRow);
 
   // ---------- Start ----------
   applySettings();
