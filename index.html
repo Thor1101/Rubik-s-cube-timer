@@ -38,7 +38,12 @@
   #main { margin-left: var(--side-left-w); margin-right: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column;
           padding: 12px 20px 6px; text-align: center; }
   #topBar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-  #topRight { display: flex; align-items: center; gap: 8px; }
+  #topRight { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  #topLeft { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+  /* drie streepjes: alleen op een smal scherm zichtbaar (op een laptop staat de balk altijd in beeld) */
+  .menuBtn { display: none; flex: none; align-items: center; justify-content: center; width: 36px; height: 34px; padding: 0; margin: 0; border-radius: 10px; }
+  .menuBtn svg { width: 20px; height: 20px; display: block; }
+  #menuBackdrop { display: none; }
   #puzzleBar { display: inline-flex; background: var(--text); border-radius: 12px; padding: 3px; gap: 2px; max-width: 100%; overflow-x: auto; }
   #puzzleBar button { background: none; border: none; color: var(--bg); opacity: 0.7; font-weight: 700; padding: 7px 12px;
                       border-radius: 9px; font-size: 0.85rem; white-space: nowrap; }
@@ -142,7 +147,14 @@
   /* ---------- Smal scherm (telefoon): geen linkerbalk ---------- */
   @media (max-width: 800px) {
     #main { margin-left: 0; margin-right: 0; min-height: 0; padding: 12px 14px; }
-    #sideLeft { display: none; }
+    .menuBtn { display: flex; }
+    /* de linkerbalk schuift op een smal scherm van links in beeld als je op de drie streepjes drukt */
+    #sideLeft { width: min(78vw, 280px); z-index: 60; background-color: var(--bg); background-image: linear-gradient(var(--side-bg), var(--side-bg));
+                transform: translateX(-102%); visibility: hidden; transition: transform 0.22s ease, visibility 0.22s; box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4); }
+    body.menu-open #sideLeft { transform: none; visibility: visible; }
+    #menuBackdrop { display: block; position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 55; background: rgba(0, 0, 0, 0.45);
+                    opacity: 0; pointer-events: none; transition: opacity 0.22s ease; }
+    body.menu-open #menuBackdrop { opacity: 1; pointer-events: auto; }
     #side { position: static; width: auto; max-width: 520px; margin: 8px auto 20px; background: transparent; padding: 12px 14px; }
     #times { max-height: 50vh; }
     .panel { position: fixed; top: 12px; left: 12px; right: 12px; width: auto; max-height: calc(100vh - 24px); }
@@ -165,7 +177,12 @@
 <body>
   <main id="main">
     <div id="topBar">
-      <div id="puzzleBar" role="tablist" aria-label="Kies een puzzel"></div>
+      <div id="topLeft">
+        <button id="menuBtn" class="menuBtn" aria-label="Menu" aria-expanded="false" title="Menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+        <div id="puzzleBar" role="tablist" aria-label="Kies een puzzel"></div>
+      </div>
       <div id="topRight">
         <details>
           <summary title="Instellingen" aria-label="Instellingen">&#9881;</summary>
@@ -245,6 +262,8 @@
     </nav>
   </aside>
 
+  <div id="menuBackdrop"></div>
+
   <aside id="side">
     <div id="dailyCard">
       <div class="dTop" id="dailyDate"></div>
@@ -281,6 +300,8 @@
   const dailyBtn = document.getElementById("dailyBtn");
   const brandBtn = document.getElementById("brandBtn");
   const navTimer = document.getElementById("navTimer");
+  const menuBtn = document.getElementById("menuBtn");
+  const menuBackdrop = document.getElementById("menuBackdrop");
   const root = document.documentElement;
 
   // ---------- Opslag (veilig, werkt ook als opslag geblokkeerd is) ----------
@@ -1287,7 +1308,7 @@
 
   // Aanraking van de balken, knoppen en instellingen start de timer niet (en blokkeert scrollen niet)
   function isControl(el) {
-    return el.closest && el.closest("button, input, label, summary, details, #side, #sideLeft, #cube, #topBar");
+    return el.closest && el.closest("button, input, label, summary, details, #side, #sideLeft, #menuBackdrop, #cube, #topBar");
   }
 
   // Spatie is altijd voor de timer: nooit scrollen en nooit per ongeluk een knop indrukken
@@ -1453,7 +1474,10 @@
     cubeEl.style.marginTop = mt + "px";
   }
 
-  window.addEventListener("resize", placeCube);
+  window.addEventListener("resize", () => {
+    placeCube();
+    if (!(window.matchMedia && window.matchMedia("(max-width: 800px)").matches)) setMenu(false);
+  });
   window.addEventListener("load", alignScrambleRow);
   if (document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(alignScrambleRow);
 
@@ -1466,7 +1490,22 @@
     navTimer.className = v === "timer" ? "navItem active" : "navItem";
     if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
   }
+  // Menu (linkerbalk) openen en sluiten op een smal scherm
+  let menuOpen = false;
+  function setMenu(open) {
+    menuOpen = !!open;
+    document.body.classList.toggle("menu-open", menuOpen);
+    menuBtn.setAttribute("aria-expanded", String(menuOpen));
+  }
+  menuBtn.addEventListener("click", e => {
+    setMenu(!menuOpen);
+    e.currentTarget.blur();
+  });
+  menuBackdrop.addEventListener("click", () => setMenu(false));
+  window.addEventListener("keydown", e => { if (e.key === "Escape" && menuOpen) setMenu(false); });
+
   function goHome(e) {
+    setMenu(false);
     const det = document.querySelector("details");
     if (det) det.open = false; // instellingen dicht
     showView("timer", true);
