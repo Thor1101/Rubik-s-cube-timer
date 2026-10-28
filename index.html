@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #0b2d80;
@@ -144,9 +145,63 @@
   .scrambleBox button { display: block; margin-top: 6px; }
   #clear { flex: none; width: 100%; margin: 8px 0 0; font-size: 0.8rem; padding: 6px; }
 
+
+  /* ---------- Jij-knop (onderaan de linkerbalk) en de man ---------- */
+  .meBtn { display: flex; align-items: center; gap: 10px; width: 100%; margin: auto 0 0; padding: 8px 12px; background: transparent;
+           border: 2px solid var(--line2, rgba(255, 255, 255, 0.35)); border-radius: 10px; color: var(--text); text-align: left; cursor: pointer; outline: none; }
+  .meBtn:hover { border-color: var(--pink); }
+  .meBtn.active { border-color: var(--pink); background: rgba(255, 126, 185, 0.16); }
+  .meText { display: flex; flex-direction: column; min-width: 0; }
+  .meLabel { font-size: 1.05rem; font-weight: 800; }
+  .meSub { font-size: 0.7rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .man { display: block; overflow: visible; flex: none; }
+  .man .bob { animation: manBob 1.3s ease-in-out infinite; }
+  .man .armR { transform-origin: 36.5px 28px; animation: manWave 0.9s ease-in-out infinite; }
+  .man .legL { transform-origin: 20px 42px; animation: manStepL 1.3s ease-in-out infinite; }
+  .man .legR { transform-origin: 28px 42px; animation: manStepR 1.3s ease-in-out infinite; }
+  .man .eyeL { transform-origin: 20.5px 14px; animation: manBlink 4s infinite; }
+  .man .eyeR { transform-origin: 27.5px 14px; animation: manBlink 4s infinite; }
+  @keyframes manBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.6px); } }
+  @keyframes manWave { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(24deg); } }
+  @keyframes manStepL { 0%, 100% { transform: rotate(7deg); } 50% { transform: rotate(-7deg); } }
+  @keyframes manStepR { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+  @keyframes manBlink { 0%, 92%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+  @media (prefers-reduced-motion: reduce) { .man * { animation: none !important; } }
+  .meBtn.active .man .armR { animation-duration: 0.6s; }
+
+  /* ---------- Jij-pagina: account aanmaken of inloggen ---------- */
+  #viewMe { display: none; margin-left: var(--side-left-w); min-height: 100vh; padding: 28px 20px; text-align: center; }
+  body[data-view="me"] #viewMe { display: block; }
+  body[data-view="me"] #main, body[data-view="me"] #side { display: none; }
+  .meCard { max-width: 420px; margin: 0 auto; background: var(--panel); border-radius: 16px; padding: 22px; text-align: left; }
+  .meHero { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 14px; }
+  .meHero h2 { margin: 4px 0 0; font-size: 1.5rem; }
+  .meHero p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+  .meTabs { display: flex; gap: 4px; background: var(--panel); border-radius: 12px; padding: 3px; margin-bottom: 14px; }
+  .meTabs button { flex: 1; margin: 0; border: none; background: none; padding: 8px 10px; border-radius: 9px; font-weight: 700; font-size: 0.85rem; opacity: 0.75; }
+  .meTabs button.on { background: var(--pink); color: #0b2a78; opacity: 1; }
+  #meForm label { display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 10px; color: var(--muted); }
+  #meForm input { display: block; width: 100%; margin-top: 4px; padding: 10px 12px; font-size: 0.95rem; color: var(--text); background: rgba(255, 255, 255, 0.10);
+                  border: 1px solid var(--line); border-radius: 10px; outline: none; font-family: inherit; }
+  #meForm input:focus { border-color: var(--pink); }
+  .meMsg { min-height: 1.3em; font-size: 0.8rem; margin: 2px 0 8px; }
+  .meMsg.err { color: #ff8a8a; }
+  .meMsg.ok { color: var(--ready); }
+  .meSubmit { display: block; width: 100%; margin: 0; padding: 11px; border: none; border-radius: 10px; background: var(--pink); color: #0b2a78; font-weight: 800; font-size: 0.95rem; }
+  .meSubmit:hover { border: none; opacity: 0.92; }
+  .meOut { background: var(--panel); color: var(--text); }
+  .meNote { font-size: 0.72rem; line-height: 1.5; color: var(--muted); margin: 12px 0 0; }
+  .meWelcome { font-size: 1.05rem; margin: 6px 0; text-align: center; }
+  #meUserBox .meNote { text-align: center; margin-bottom: 14px; }
+
+  .meHint { font-size: 0.72rem; margin: -4px 0 10px; min-height: 1em; color: var(--muted); }
+  .meHint.ok { color: var(--ready); }
+  .meHint.err { color: #ff8a8a; }
+
   /* ---------- Smal scherm (telefoon): geen linkerbalk ---------- */
   @media (max-width: 800px) {
     #main { margin-left: 0; margin-right: 0; min-height: 0; padding: 12px 14px; }
+    #viewMe { margin-left: 0; min-height: 0; padding: 16px 14px; }
     .menuBtn { display: flex; }
     /* de linkerbalk schuift op een smal scherm van links in beeld als je op de drie streepjes drukt */
     #sideLeft { width: min(78vw, 280px); z-index: 60; background-color: var(--bg); background-image: linear-gradient(var(--side-bg), var(--side-bg));
@@ -252,6 +307,47 @@
     </div>
   </main>
 
+  <section id="viewMe" aria-label="Jij">
+    <div class="meCard">
+      <div class="meHero">
+        <svg class="man manBig" viewBox="0 0 48 60" width="96" height="120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g class="bob"><g class="legL"><rect x="17.5" y="42" width="5" height="14" rx="2.5" fill="#0b2a78"/></g><g class="legR"><rect x="25.5" y="42" width="5" height="14" rx="2.5" fill="#0b2a78"/></g><rect x="8" y="27" width="5" height="15" rx="2.5" fill="#ffd7a8" transform="rotate(12 10.5 29)"/><rect x="14" y="24" width="20" height="20" rx="7" fill="#ff7eb9"/><g class="armR"><rect x="34" y="13" width="5" height="17" rx="2.5" fill="#ffd7a8"/></g><circle cx="24" cy="13" r="10" fill="#ffd7a8"/><path d="M14.200 11.500c0-6.200 4.200-9.500 9.800-9.500s9.800 3.300 9.800 9.500c-3-3.200-7-4.200-9.800-4.200s-6.800 1-9.800 4.200z" fill="#2b1b0e"/><circle class="eyeL" cx="20.500" cy="14" r="1.400" fill="#1a1a1a"/><circle class="eyeR" cx="27.500" cy="14" r="1.400" fill="#1a1a1a"/><path d="M20.500 18.300q3.500 3 7 0" fill="none" stroke="#1a1a1a" stroke-width="1.300" stroke-linecap="round"/></g></svg>
+        <h2>Jij</h2>
+        <p id="meStatus">Je bent niet ingelogd.</p>
+      </div>
+
+      <div id="meGuest">
+        <div class="meTabs">
+          <button type="button" id="tabLogin" class="on">Inloggen</button>
+          <button type="button" id="tabSignup">Account aanmaken</button>
+        </div>
+        <form id="meForm" autocomplete="on" novalidate>
+          <label id="meNameRow" style="display:none">Naam (moet uniek zijn)
+            <input id="meNameIn" type="text" autocomplete="username" maxlength="20" autocapitalize="none" spellcheck="false">
+          </label>
+          <div id="meNameHint" class="meHint" style="display:none"></div>
+          <label>E-mailadres
+            <input id="meEmail" type="email" autocomplete="email" autocapitalize="none" spellcheck="false">
+          </label>
+          <label>Wachtwoord
+            <input id="mePass" type="password" autocomplete="current-password">
+          </label>
+          <label id="meRepeatRow" style="display:none">Herhaal wachtwoord
+            <input id="mePass2" type="password" autocomplete="new-password">
+          </label>
+          <div id="meMsg" class="meMsg" role="status" aria-live="polite"></div>
+          <button type="submit" id="meSubmit" class="meSubmit">Inloggen</button>
+        </form>
+        <p class="meNote" id="meModeNote"></p>
+      </div>
+
+      <div id="meUserBox" style="display:none">
+        <p class="meWelcome">Ingelogd als <b id="meName"></b></p>
+        <p class="meNote" id="meSince"></p>
+        <button type="button" id="meLogout" class="meSubmit meOut">Uitloggen</button>
+      </div>
+    </div>
+  </section>
+
   <aside id="sideLeft" aria-label="Menu">
     <button id="brandBtn" class="brand" title="Naar de timer" aria-label="TWC Timer, naar de timer">
       <span class="brandText">TWC Timer</span>
@@ -260,6 +356,10 @@
     <nav id="sideNav">
       <button id="navTimer" class="navItem active" data-view="timer">Timer</button>
     </nav>
+    <button id="meBtn" class="meBtn" title="Jij: account aanmaken of inloggen" aria-label="Jij: account aanmaken of inloggen">
+      <svg class="man manSmall" viewBox="0 0 48 60" width="34" height="42" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g class="bob"><g class="legL"><rect x="17.5" y="42" width="5" height="14" rx="2.5" fill="#0b2a78"/></g><g class="legR"><rect x="25.5" y="42" width="5" height="14" rx="2.5" fill="#0b2a78"/></g><rect x="8" y="27" width="5" height="15" rx="2.5" fill="#ffd7a8" transform="rotate(12 10.5 29)"/><rect x="14" y="24" width="20" height="20" rx="7" fill="#ff7eb9"/><g class="armR"><rect x="34" y="13" width="5" height="17" rx="2.5" fill="#ffd7a8"/></g><circle cx="24" cy="13" r="10" fill="#ffd7a8"/><path d="M14.200 11.500c0-6.200 4.200-9.500 9.800-9.500s9.800 3.300 9.800 9.500c-3-3.200-7-4.200-9.800-4.200s-6.800 1-9.800 4.200z" fill="#2b1b0e"/><circle class="eyeL" cx="20.500" cy="14" r="1.400" fill="#1a1a1a"/><circle class="eyeR" cx="27.500" cy="14" r="1.400" fill="#1a1a1a"/><path d="M20.500 18.300q3.500 3 7 0" fill="none" stroke="#1a1a1a" stroke-width="1.300" stroke-linecap="round"/></g></svg>
+      <span class="meText"><span class="meLabel">jij</span><span class="meSub" id="meSub"></span></span>
+    </button>
   </aside>
 
   <div id="menuBackdrop"></div>
@@ -300,6 +400,27 @@
   const dailyBtn = document.getElementById("dailyBtn");
   const brandBtn = document.getElementById("brandBtn");
   const navTimer = document.getElementById("navTimer");
+  const meBtn = document.getElementById("meBtn");
+  const meSub = document.getElementById("meSub");
+  const meGuest = document.getElementById("meGuest");
+  const meUserBox = document.getElementById("meUserBox");
+  const meStatus = document.getElementById("meStatus");
+  const meName = document.getElementById("meName");
+  const meSince = document.getElementById("meSince");
+  const meForm = document.getElementById("meForm");
+  const meNameRow = document.getElementById("meNameRow");
+  const meNameIn = document.getElementById("meNameIn");
+  const meNameHint = document.getElementById("meNameHint");
+  const meEmail = document.getElementById("meEmail");
+  const meModeNote = document.getElementById("meModeNote");
+  const mePass = document.getElementById("mePass");
+  const mePass2 = document.getElementById("mePass2");
+  const meRepeatRow = document.getElementById("meRepeatRow");
+  const meMsg = document.getElementById("meMsg");
+  const meSubmit = document.getElementById("meSubmit");
+  const tabLogin = document.getElementById("tabLogin");
+  const tabSignup = document.getElementById("tabSignup");
+  const meLogout = document.getElementById("meLogout");
   const menuBtn = document.getElementById("menuBtn");
   const menuBackdrop = document.getElementById("menuBackdrop");
   const root = document.documentElement;
@@ -1315,6 +1436,7 @@
   function isSpace(e) { return e.code === "Space" || e.key === " "; }
   const keyOpts = { capture: true, passive: false };
   window.addEventListener("keydown", e => {
+    if (view !== "timer") return; // op de Jij-pagina kun je gewoon typen
     if (state === "running") { // elke toets stopt de timer
       if (!e.ctrlKey && !e.metaKey && !e.altKey) e.preventDefault();
       if (!e.repeat) stopSolve();
@@ -1328,18 +1450,20 @@
     press();
   }, keyOpts);
   window.addEventListener("keypress", e => {
-    if (isSpace(e)) e.preventDefault();
+    if (view === "timer" && isSpace(e)) e.preventDefault();
   }, keyOpts);
   window.addEventListener("keyup", e => {
-    if (!isSpace(e)) return;
+    if (view !== "timer" || !isSpace(e)) return;
     e.preventDefault();
     release();
   }, keyOpts);
 
   document.addEventListener("touchstart", e => {
+    if (view !== "timer") return;
     if (state === "running" || !isControl(e.target)) { e.preventDefault(); press(); }
   }, { passive: false });
   document.addEventListener("touchend", e => {
+    if (view !== "timer") return;
     if (!isControl(e.target)) { e.preventDefault(); release(); }
   }, { passive: false });
 
@@ -1481,15 +1605,259 @@
   window.addEventListener("load", alignScrambleRow);
   if (document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(alignScrambleRow);
 
-  // ---------- Navigatie (balk links) ----------
-  // Nu is er alleen de timer; 'TWC Timer' en het vak 'Timer' brengen je er direct naartoe.
+  // ---------- Account ----------
+  // ONLINE (echt uniek voor iedereen) via Supabase: vul hieronder de gegevens van je project in (zie SETUP-ACCOUNTS.md).
+  // De "anon"-sleutel is bedoeld om openbaar te zijn. Zet hier NOOIT de "service_role"-sleutel neer.
+  // Zolang hier niets staat, werkt het account alleen in deze browser (lokale modus).
+  const ACCOUNT_CONFIG = { url: "", anonKey: "" };
+  const wantsOnline = () => !!(ACCOUNT_CONFIG.url && ACCOUNT_CONFIG.anonKey);
+
+  let sb = null;                         // verbinding met de online accountdienst
+  let onlineUser = null;                 // { email, name, created } als je online bent ingelogd
+  let accLoadFailed = false;
+  let users = load("users", {});         // lokaal: { e-mail in kleine letters: { name, email, salt, hash, created } }
+  let session = load("session", null);   // lokaal: e-mail (kleine letters) van wie is ingelogd
+  let authMode = "login";
+  let meBusy = false;
+  const NAME_HINT = "3 tot 20 tekens: letters, cijfers, _ of -.";
+  const NAME_RE = /^[A-Za-z0-9_-]{3,20}$/;
+  const validName = n => NAME_RE.test(n);
+  const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  const authFail = msg => ({ ok: false, msg: msg });
+  const authOk = msg => ({ ok: true, msg: msg });
+  const serviceFailMsg = () => "De accountdienst kon niet worden geladen. Controleer je internetverbinding en vernieuw de pagina.";
+
+  function cryptoObj() { return window.crypto || (typeof globalThis !== "undefined" ? globalThis.crypto : null); }
+  function toHex(bytes) { return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join(""); }
+  function randomSalt() {
+    const a = new Uint8Array(16);
+    const cr = cryptoObj();
+    if (cr && cr.getRandomValues) cr.getRandomValues(a);
+    else for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256);
+    return toHex(a);
+  }
+  async function hashPw(pw, salt) {
+    const data = new TextEncoder().encode(salt + ":" + pw);
+    const cr = cryptoObj();
+    if (cr && cr.subtle) return toHex(new Uint8Array(await cr.subtle.digest("SHA-256", data)));
+    let h = 5381; // eenvoudige terugval als de browser geen versleuteling heeft
+    for (let i = 0; i < data.length; i++) h = ((h << 5) + h + data[i]) | 0;
+    return "x" + (h >>> 0).toString(16);
+  }
+
+  // ----- lokale modus (alleen in deze browser) -----
+  function localByName(name) {
+    const n = String(name).toLowerCase();
+    return Object.keys(users).map(k => users[k]).find(u => String(u.name).toLowerCase() === n) || null;
+  }
+  function localCurrent() { return session && users[session] ? users[session] : null; }
+  async function localSignup(name, email, pw) {
+    if (localByName(name)) return authFail("Deze naam is al bezet. Kies een andere naam.");
+    const key = email.toLowerCase();
+    if (users[key]) return authFail("Er bestaat al een account met dit e-mailadres. Ga naar Inloggen.");
+    const salt = randomSalt();
+    users[key] = { name: name, email: email, salt: salt, hash: await hashPw(pw, salt), created: todayKey() };
+    save("users", users);
+    session = key;
+    save("session", session);
+    return authOk("Account gemaakt. Je bent ingelogd als " + name + ".");
+  }
+  async function localLogin(email, pw) {
+    // oude accounts (zonder e-mailadres) kunnen nog met hun naam inloggen
+    const u = users[email.toLowerCase()] || (email.indexOf("@") < 0 ? localByName(email) : null);
+    if (!u || (await hashPw(pw, u.salt)) !== u.hash) return authFail("Het e-mailadres of wachtwoord klopt niet.");
+    session = Object.keys(users).find(k => users[k] === u);
+    save("session", session);
+    return authOk("Je bent ingelogd.");
+  }
+  function localLogout() {
+    session = null;
+    save("session", null);
+    return authOk("Je bent uitgelogd.");
+  }
+
+  // ----- online modus (Supabase) -----
+  function setOnlineUser(u) {
+    onlineUser = u ? { email: u.email || "", name: (u.user_metadata && u.user_metadata.username) || "", created: String(u.created_at || "").slice(0, 10) } : null;
+    renderMe();
+  }
+  function initAccounts() {
+    if (sb || !wantsOnline()) { renderMe(); return; }
+    if (!(window.supabase && window.supabase.createClient)) { accLoadFailed = true; renderMe(); return; }
+    sb = window.supabase.createClient(ACCOUNT_CONFIG.url, ACCOUNT_CONFIG.anonKey);
+    sb.auth.getSession().then(r => setOnlineUser(r && r.data && r.data.session ? r.data.session.user : null));
+    sb.auth.onAuthStateChange((event, ses) => setOnlineUser(ses ? ses.user : null));
+  }
+  // Nederlandse uitleg bij foutmeldingen van de accountdienst
+  function mapAuthError(err) {
+    const m = String((err && err.message) || err || "").toLowerCase();
+    if (m.indexOf("invalid login credentials") >= 0) return "Het e-mailadres of wachtwoord klopt niet.";
+    if (m.indexOf("email not confirmed") >= 0) return "Bevestig eerst je e-mailadres via de mail die we je hebben gestuurd.";
+    if (m.indexOf("already registered") >= 0 || m.indexOf("already been registered") >= 0) return "Er bestaat al een account met dit e-mailadres. Ga naar Inloggen.";
+    if (m.indexOf("database error") >= 0) return "Deze naam is net door iemand anders gekozen of is niet toegestaan. Kies een andere naam.";
+    if (m.indexOf("password") >= 0) return "Kies een sterker wachtwoord (minstens 8 tekens).";
+    if (m.indexOf("rate limit") >= 0 || m.indexOf("too many") >= 0) return "Te veel pogingen. Wacht even en probeer het opnieuw.";
+    return "Er ging iets mis: " + ((err && err.message) || "onbekende fout");
+  }
+  async function onlineCheckName(name) { // true = vrij, false = bezet, null = niet te controleren
+    if (!sb) return null;
+    try {
+      const r = await sb.rpc("username_available", { name: name });
+      if (r.error) return null;
+      return r.data === true;
+    } catch (e) { return null; }
+  }
+  async function onlineSignup(name, email, pw) {
+    if ((await onlineCheckName(name)) === false) return authFail("Deze naam is al bezet. Kies een andere naam.");
+    try {
+      const r = await sb.auth.signUp({ email: email, password: pw, options: { data: { username: name } } });
+      if (r.error) return authFail(mapAuthError(r.error));
+      const user = r.data && r.data.user;
+      if (user && Array.isArray(user.identities) && user.identities.length === 0) {
+        return authFail("Er bestaat al een account met dit e-mailadres. Ga naar Inloggen.");
+      }
+      if (r.data && r.data.session) return authOk("Account gemaakt. Je bent ingelogd als " + name + ".");
+      return authOk("Account gemaakt! Bevestig je e-mailadres via de mail die we je hebben gestuurd en log daarna in.");
+    } catch (e) { return authFail(mapAuthError(e)); }
+  }
+  async function onlineLogin(email, pw) {
+    try {
+      const r = await sb.auth.signInWithPassword({ email: email, password: pw });
+      if (r.error) return authFail(mapAuthError(r.error));
+      return authOk("Je bent ingelogd.");
+    } catch (e) { return authFail(mapAuthError(e)); }
+  }
+  async function onlineLogout() {
+    try {
+      const r = await sb.auth.signOut();
+      if (r && r.error) return authFail(mapAuthError(r.error));
+      return authOk("Je bent uitgelogd.");
+    } catch (e) { return authFail(mapAuthError(e)); }
+  }
+
+  // ----- gemeenschappelijk -----
+  function currentUser() {
+    if (wantsOnline()) return onlineUser;
+    const u = localCurrent();
+    return u ? { name: u.name, email: u.email || "", created: u.created || "" } : null;
+  }
+  async function checkName(name) { return wantsOnline() ? onlineCheckName(name) : !localByName(name); }
+
+  async function doSignup(name, email, pw) {
+    name = String(name || "").trim();
+    email = String(email || "").trim();
+    pw = String(pw || "");
+    if (!validName(name)) return authFail("Kies een naam van 3 tot 20 tekens: letters, cijfers, _ of -.");
+    if (!validEmail(email)) return authFail("Vul een geldig e-mailadres in.");
+    if (pw.length < 8) return authFail("Het wachtwoord moet minstens 8 tekens hebben.");
+    if (wantsOnline()) return sb ? onlineSignup(name, email, pw) : authFail(serviceFailMsg());
+    return localSignup(name, email, pw);
+  }
+  async function doLogin(email, pw) {
+    email = String(email || "").trim();
+    pw = String(pw || "");
+    if (!email) return authFail("Vul je e-mailadres in.");
+    if (wantsOnline() && !validEmail(email)) return authFail("Vul een geldig e-mailadres in.");
+    if (!pw) return authFail("Vul je wachtwoord in.");
+    if (wantsOnline()) return sb ? onlineLogin(email, pw) : authFail(serviceFailMsg());
+    return localLogin(email, pw);
+  }
+  async function doLogout() {
+    if (wantsOnline()) return sb ? onlineLogout() : authFail(serviceFailMsg());
+    return localLogout();
+  }
+
+  function setMsg(text, kind) {
+    meMsg.textContent = text;
+    meMsg.className = "meMsg" + (kind ? " " + kind : "");
+  }
+  function setAuthMode(m) {
+    authMode = m;
+    const su = m === "signup";
+    tabLogin.className = su ? "" : "on";
+    tabSignup.className = su ? "on" : "";
+    meNameRow.style.display = su ? "" : "none";
+    meNameHint.style.display = su ? "" : "none";
+    meRepeatRow.style.display = su ? "" : "none";
+    mePass.autocomplete = su ? "new-password" : "current-password";
+    meSubmit.textContent = su ? "Account aanmaken" : "Inloggen";
+    meNameHint.textContent = NAME_HINT;
+    meNameHint.className = "meHint";
+    setMsg("", "");
+  }
+
+  function renderMe() {
+    const u = currentUser();
+    meGuest.style.display = u ? "none" : "";
+    meUserBox.style.display = u ? "" : "none";
+    meStatus.textContent = u ? "Ingelogd als " + u.name : "Je bent niet ingelogd.";
+    meName.textContent = u ? u.name : "";
+    meSince.textContent = u ? (u.email || "") + (u.created ? "  \u00b7  account gemaakt op " + u.created : "") : "";
+    meSub.textContent = u ? u.name : "";
+    meModeNote.textContent = wantsOnline()
+      ? (accLoadFailed ? serviceFailMsg() : "Je account staat online. Je naam is uniek: niemand anders kan hem gebruiken.")
+      : "Let op: zonder online database staat een account alleen in deze browser, op dit apparaat. Dan is een naam alleen uniek op dit apparaat. Voor echte accounts: zie SETUP-ACCOUNTS.md.";
+  }
+
+  async function handleAuth() {
+    if (meBusy) return;
+    if (authMode === "signup" && mePass.value !== mePass2.value) { setMsg("De twee wachtwoorden zijn niet hetzelfde.", "err"); return; }
+    meBusy = true;
+    meSubmit.disabled = true;
+    setMsg("Bezig...", "");
+    const r = authMode === "signup"
+      ? await doSignup(meNameIn.value, meEmail.value, mePass.value)
+      : await doLogin(meEmail.value, mePass.value);
+    meBusy = false;
+    meSubmit.disabled = false;
+    setMsg(r.msg, r.ok ? "ok" : "err");
+    if (r.ok) { mePass.value = ""; mePass2.value = ""; }
+    renderMe();
+  }
+
+  // Live controle of de naam nog vrij is
+  let nameTimer = null, nameToken = 0;
+  meNameIn.addEventListener("input", () => {
+    clearTimeout(nameTimer);
+    const n = meNameIn.value.trim();
+    meNameHint.className = "meHint";
+    if (!n) { meNameHint.textContent = NAME_HINT; return; }
+    if (!validName(n)) { meNameHint.textContent = "Alleen letters, cijfers, _ en - (3 tot 20 tekens)."; return; }
+    const tok = ++nameToken;
+    meNameHint.textContent = "Controleren...";
+    nameTimer = setTimeout(async () => {
+      const free = await checkName(n);
+      if (tok !== nameToken) return;
+      if (free === true) { meNameHint.textContent = "\u2713 Deze naam is beschikbaar."; meNameHint.className = "meHint ok"; }
+      else if (free === false) { meNameHint.textContent = "\u2717 Deze naam is al bezet."; meNameHint.className = "meHint err"; }
+      else meNameHint.textContent = NAME_HINT;
+    }, 400);
+  });
+
+  meForm.addEventListener("submit", e => { e.preventDefault(); handleAuth(); });
+  tabLogin.addEventListener("click", () => setAuthMode("login"));
+  tabSignup.addEventListener("click", () => setAuthMode("signup"));
+  meLogout.addEventListener("click", async () => {
+    const r = await doLogout();
+    setAuthMode("login");
+    if (r.msg) setMsg(r.msg, r.ok ? "ok" : "err");
+    renderMe();
+  });
+  window.addEventListener("load", initAccounts);
+  setAuthMode("login");
+
+  // ---------- Navigatie (balk links): Timer en Jij ----------
   let view = "timer";
   function showView(v, scroll) {
+    if (v !== view && state !== "idle") return; // niet wisselen terwijl de timer bezig is
     view = v;
     document.body.dataset.view = v;
     navTimer.className = v === "timer" ? "navItem active" : "navItem";
+    meBtn.className = v === "me" ? "meBtn active" : "meBtn";
+    if (v === "me") renderMe();
     if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
   // Menu (linkerbalk) openen en sluiten op een smal scherm
   let menuOpen = false;
   function setMenu(open) {
@@ -1504,6 +1872,7 @@
   menuBackdrop.addEventListener("click", () => setMenu(false));
   window.addEventListener("keydown", e => { if (e.key === "Escape" && menuOpen) setMenu(false); });
 
+  // 'TWC Timer' en het vak 'Timer' brengen je direct naar de timer
   function goHome(e) {
     setMenu(false);
     const det = document.querySelector("details");
@@ -1511,8 +1880,14 @@
     showView("timer", true);
     if (e && e.currentTarget && e.currentTarget.blur) e.currentTarget.blur();
   }
+  function goMe(e) {
+    setMenu(false);
+    showView("me", true);
+    if (e && e.currentTarget && e.currentTarget.blur) e.currentTarget.blur();
+  }
   brandBtn.addEventListener("click", goHome);
   navTimer.addEventListener("click", goHome);
+  meBtn.addEventListener("click", goMe);
 
   // ---------- Start ----------
   applySettings();
@@ -1521,6 +1896,7 @@
   render();
   renderDaily();
   placeCube();
+  renderMe();
   showView("timer", false);
 </script>
 </body>
