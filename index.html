@@ -194,6 +194,7 @@
   .meWelcome { font-size: 1.05rem; margin: 6px 0; text-align: center; }
   #meUserBox .meNote { text-align: center; margin-bottom: 14px; }
 
+  .meNote.warn { background: rgba(255, 126, 185, 0.15); border: 1px solid rgba(255, 126, 185, 0.55); border-radius: 10px; padding: 10px 12px; color: var(--text); line-height: 1.4; }
   .meHint { font-size: 0.72rem; margin: -4px 0 10px; min-height: 1em; color: var(--muted); }
   .meHint.ok { color: var(--ready); }
   .meHint.err { color: #ff8a8a; }
@@ -1609,8 +1610,17 @@
   // ONLINE (echt uniek voor iedereen) via Supabase: vul hieronder de gegevens van je project in (zie SETUP-ACCOUNTS.md).
   // De "anon"-sleutel is bedoeld om openbaar te zijn. Zet hier NOOIT de "service_role"-sleutel neer.
   // Zolang hier niets staat, werkt het account alleen in deze browser (lokale modus).
-  const ACCOUNT_CONFIG = { url: "https://kkwmarhjtsfbepgtxrfh.supabase.co/rest/v1/", anonKey: "sb_publishable_u4ojPShPHhK4-z4nTDSVFw_DJKpo3WC" };
+  const ACCOUNT_CONFIG = { url: "", anonKey: "" };
   const wantsOnline = () => !!(ACCOUNT_CONFIG.url && ACCOUNT_CONFIG.anonKey);
+  // Maakt van de ingevulde URL altijd de kale vorm https://project.supabase.co (zonder / of pad erachter, zonder spaties)
+  function cleanSupabaseUrl(u) {
+    let v = String(u || "").trim();
+    if (v && !/^https?:\/\//i.test(v)) v = "https://" + v;
+    try { return new URL(v).origin; } catch (e) { return v.replace(/\/+$/, ""); }
+  }
+  function urlLooksWrong() {
+    try { return !/\.supabase\.(co|in)$/i.test(new URL(cleanSupabaseUrl(ACCOUNT_CONFIG.url)).hostname); } catch (e) { return true; }
+  }
 
   let sb = null;                         // verbinding met de online accountdienst
   let onlineUser = null;                 // { email, name, created } als je online bent ingelogd
@@ -1684,13 +1694,14 @@
   function initAccounts() {
     if (sb || !wantsOnline()) { renderMe(); return; }
     if (!(window.supabase && window.supabase.createClient)) { accLoadFailed = true; renderMe(); return; }
-    sb = window.supabase.createClient(ACCOUNT_CONFIG.url, ACCOUNT_CONFIG.anonKey);
+    sb = window.supabase.createClient(cleanSupabaseUrl(ACCOUNT_CONFIG.url), String(ACCOUNT_CONFIG.anonKey).trim());
     sb.auth.getSession().then(r => setOnlineUser(r && r.data && r.data.session ? r.data.session.user : null));
     sb.auth.onAuthStateChange((event, ses) => setOnlineUser(ses ? ses.user : null));
   }
   // Nederlandse uitleg bij foutmeldingen van de accountdienst
   function mapAuthError(err) {
     const m = String((err && err.message) || err || "").toLowerCase();
+    if (m.indexOf("invalid path") >= 0) return "De Project URL in index.html klopt niet. Hij moet precies zo zijn: https://jouwproject.supabase.co (zonder / of iets anders erachter).";
     if (m.indexOf("invalid login credentials") >= 0) return "Het e-mailadres of wachtwoord klopt niet.";
     if (m.indexOf("email not confirmed") >= 0) return "Bevestig eerst je e-mailadres via de mail die we je hebben gestuurd.";
     if (m.indexOf("already registered") >= 0 || m.indexOf("already been registered") >= 0) return "Er bestaat al een account met dit e-mailadres. Ga naar Inloggen.";
@@ -1795,8 +1806,11 @@
     meSince.textContent = u ? (u.email || "") + (u.created ? "  \u00b7  account gemaakt op " + u.created : "") : "";
     meSub.textContent = u ? u.name : "";
     meModeNote.textContent = wantsOnline()
-      ? (accLoadFailed ? serviceFailMsg() : "Je account staat online. Je naam is uniek: niemand anders kan hem gebruiken.")
-      : "Let op: zonder online database staat een account alleen in deze browser, op dit apparaat. Dan is een naam alleen uniek op dit apparaat. Voor echte accounts: zie SETUP-ACCOUNTS.md.";
+      ? (accLoadFailed ? serviceFailMsg() : "Je account staat online: je kunt op elk apparaat inloggen met je e-mailadres en wachtwoord. Je naam is uniek, niemand anders kan hem gebruiken.")
+      : "Let op: dit account werkt nu alleen op dit apparaat. Om op verschillende apparaten (laptop, gsm) met hetzelfde e-mailadres in te kunnen loggen, moet je eerst de online database koppelen. Zie SETUP-ACCOUNTS.md.";
+    const urlBad = wantsOnline() && urlLooksWrong();
+    if (urlBad) meModeNote.textContent = "De Project URL in index.html lijkt niet te kloppen. Hij hoort te eindigen op .supabase.co, bijvoorbeeld https://jouwproject.supabase.co (zonder / erachter).";
+    meModeNote.className = wantsOnline() && !accLoadFailed && !urlBad ? "meNote" : "meNote warn";
   }
 
   async function handleAuth() {
