@@ -170,6 +170,9 @@
   .meBtn.active .man .armR { animation-duration: 0.6s; }
 
   /* ---------- Jij-pagina: account aanmaken of inloggen ---------- */
+  .meBack { display: none; align-items: center; gap: 4px; margin: 0 auto 10px 0; padding: 7px 14px 7px 8px; border-radius: 10px;
+            background: var(--panel); border: 1px solid var(--line); color: var(--text); font-size: 0.9rem; font-weight: 700; }
+  .meBack svg { width: 18px; height: 18px; display: block; }
   #viewMe { display: none; margin-left: var(--side-left-w); min-height: 100vh; padding: 28px 20px; text-align: center; }
   body[data-view="me"] #viewMe { display: block; }
   body[data-view="me"] #main, body[data-view="me"] #side { display: none; }
@@ -203,6 +206,7 @@
   @media (max-width: 800px) {
     #main { margin-left: 0; margin-right: 0; min-height: 0; padding: 12px 14px; }
     #viewMe { margin-left: 0; min-height: 0; padding: 16px 14px; }
+    .meBack { display: flex; }
     .menuBtn { display: flex; }
     /* de linkerbalk schuift op een smal scherm van links in beeld als je op de drie streepjes drukt */
     #sideLeft { width: min(78vw, 280px); z-index: 60; background-color: var(--bg); background-image: linear-gradient(var(--side-bg), var(--side-bg));
@@ -309,6 +313,10 @@
   </main>
 
   <section id="viewMe" aria-label="Jij">
+    <button id="meBack" class="meBack" aria-label="Terug naar het menu" title="Terug naar het menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Menu</span>
+    </button>
     <div class="meCard">
       <div class="meHero">
         <svg class="man manBig" viewBox="0 0 48 60" width="96" height="120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g class="bob"><g class="legL"><rect x="17.5" y="42" width="5" height="14" rx="2.5" fill="#0b2a78"/></g><g class="legR"><rect x="25.5" y="42" width="5" height="14" rx="2.5" fill="#0b2a78"/></g><rect x="8" y="27" width="5" height="15" rx="2.5" fill="#ffd7a8" transform="rotate(12 10.5 29)"/><rect x="14" y="24" width="20" height="20" rx="7" fill="#ff7eb9"/><g class="armR"><rect x="34" y="13" width="5" height="17" rx="2.5" fill="#ffd7a8"/></g><circle cx="24" cy="13" r="10" fill="#ffd7a8"/><path d="M14.200 11.500c0-6.200 4.200-9.500 9.800-9.500s9.800 3.300 9.800 9.500c-3-3.200-7-4.200-9.800-4.200s-6.800 1-9.800 4.200z" fill="#2b1b0e"/><circle class="eyeL" cx="20.500" cy="14" r="1.400" fill="#1a1a1a"/><circle class="eyeR" cx="27.500" cy="14" r="1.400" fill="#1a1a1a"/><path d="M20.500 18.300q3.500 3 7 0" fill="none" stroke="#1a1a1a" stroke-width="1.300" stroke-linecap="round"/></g></svg>
@@ -424,6 +432,7 @@
   const meLogout = document.getElementById("meLogout");
   const menuBtn = document.getElementById("menuBtn");
   const menuBackdrop = document.getElementById("menuBackdrop");
+  const meBack = document.getElementById("meBack");
   const root = document.documentElement;
 
   // ---------- Opslag (veilig, werkt ook als opslag geblokkeerd is) ----------
@@ -1884,6 +1893,10 @@
     e.currentTarget.blur();
   });
   menuBackdrop.addEventListener("click", () => setMenu(false));
+  meBack.addEventListener("click", e => { // pijl op de Jij-pagina (gsm): terug naar de balk links
+    setMenu(true);
+    e.currentTarget.blur();
+  });
   window.addEventListener("keydown", e => { if (e.key === "Escape" && menuOpen) setMenu(false); });
 
   // 'TWC Timer' en het vak 'Timer' brengen je direct naar de timer
