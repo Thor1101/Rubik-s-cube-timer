@@ -197,39 +197,51 @@
   .meWelcome { font-size: 1.05rem; margin: 6px 0; text-align: center; }
   #meUserBox .meNote { text-align: center; margin-bottom: 14px; }
 
-  /* Persoonlijke statistieken op de Jij-pagina */
-  .myStatsCard { max-width: 620px; margin: 16px auto 0; padding: 20px; border-radius: 16px;
-                 background: #ffffff; color: #17213a; text-align: left; }
-  .myStatsCard h3 { margin: 0 0 16px; font-size: 1.15rem; font-weight: 800; }
-  .myStatsGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-  .myStat { min-width: 0; padding: 12px; border-radius: 11px; background: #f1f4fa; }
-  .myStatLabel { color: #667085; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
-  .myStatValue { margin-top: 5px; font-family: var(--mono); font-size: 1.25rem; font-weight: 800;
-                 font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-  @media (max-width: 420px) { .myStatsCard { padding: 16px; } .myStatsGrid { gap: 9px; } .myStat { padding: 10px; } }
-  .yourWeekBar { max-width: 620px; margin: 12px auto 0; padding: 15px 18px; border-radius: 16px; background: #fff; color: #17213a;
-                 display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; }
-  .yourWeekBar h3 { margin: 0; font-size: 1.08rem; font-weight: 800; }
-  .yourWeekOpen { border: 0; border-radius: 10px; padding: 9px 20px; background: #ffb8d7; color: #54213a; font: inherit; font-weight: 800; cursor: pointer; }
-  .yourWeekOpen:hover { background: #ffa5cd; }
-  .yourWeekCard { max-width: 620px; margin: 10px auto 0; padding: 20px; border-radius: 16px; background: #fff; color: #17213a; text-align: left; }
-  .yourWeekCard[hidden] { display: none; }
-  .yourWeekDate { margin: 0 0 15px; font-size: 1rem; font-weight: 800; }
-  .yourWeekGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .yourWeekStat { min-width: 0; padding: 13px; border-radius: 11px; background: #fff0f7; }
-  .yourWeekStat .myStatValue { font-size: 1.18rem; }
-  @media (max-width: 420px) { .yourWeekCard { padding: 16px; } .yourWeekGrid { gap: 9px; } .yourWeekStat { padding: 10px; } }
-
   .meNote.warn { background: rgba(255, 126, 185, 0.15); border: 1px solid rgba(255, 126, 185, 0.55); border-radius: 10px; padding: 10px 12px; color: var(--text); line-height: 1.4; }
   .meHint { font-size: 0.72rem; margin: -4px 0 10px; min-height: 1em; color: var(--muted); }
   .meHint.ok { color: var(--ready); }
   .meHint.err { color: #ff8a8a; }
+
+  /* ---------- Jouw statistieken (op de Jij-pagina) ---------- */
+  .meStats { max-width: 420px; margin: 14px auto 0; background: #ffffff; color: #0b2a78; border-radius: 16px; padding: 18px 20px; text-align: left; }
+  .meStats h3 { margin: 0 0 10px; font-size: 1.1rem; }
+  .msTabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .msTabs button { margin: 0; background: #eaf0ff; color: #0b2a78; border: none; border-radius: 999px; padding: 5px 11px; font-size: 0.75rem; font-weight: 700; }
+  .msTabs button.on { background: #0b2a78; color: #ffffff; }
+  .msRow { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 0; border-top: 1px solid #e3e8f7; font-size: 0.95rem; }
+  .msRow b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+
+  /* ---------- Oefenen-pagina ---------- */
+  #viewPractice { display: none; margin-left: var(--side-left-w); min-height: 100vh; padding: 28px 24px; text-align: left; }
+  body[data-view="practice"] #viewPractice { display: block; }
+  body[data-view="practice"] #main, body[data-view="practice"] #side { display: none; }
+  .pracCard { background: #ffffff; color: #0b2a78; border-radius: 16px; padding: 16px 18px; max-width: 1000px; }
+  .pracRow1 { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; }
+  .pracTabs { display: inline-flex; flex-wrap: wrap; gap: 2px; background: #eaf0ff; border: 2px solid #0b2a78; border-radius: 14px; padding: 3px; }
+  .pracTabs button { margin: 0; background: none; border: none; color: #0b2a78; font-weight: 800; font-size: 0.9rem; padding: 9px 20px; border-radius: 10px; }
+  .pracTabs button:hover { background: rgba(11, 42, 120, 0.08); }
+  .pracTabs button.on { background: #0b2a78; color: #ffffff; }
+  .pracStatus { font-size: 0.8rem; font-weight: 700; color: #167a3d; }
+  .pracRow2 { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; margin-top: 16px; }
+  .pracLabel { font-size: 0.68rem; letter-spacing: 0.12em; font-weight: 700; color: #4a5f9a; }
+  .chip { margin: 0; display: inline-flex; align-items: center; gap: 8px; background: #eaf0ff; border: 2px solid #0b2a78; border-radius: 14px;
+          padding: 7px 14px 7px 10px; color: #0b2a78; font-weight: 800; font-size: 0.85rem; }
+  .chip:hover { border-color: #0b2a78; background: #dfe8ff; }
+  .chip .box { width: 18px; height: 18px; border-radius: 5px; border: 2px solid #0b2a78; background: transparent; display: inline-flex; align-items: center;
+               justify-content: center; font-size: 12px; line-height: 1; color: #ffffff; }
+  .chip.on .box { background: #0b2a78; }
+  .chip.on .box::after { content: "\2713"; }
+  #chipLearned.on .box { background: #22a55b; border-color: #22a55b; }
+  .pracCount { font-size: 0.85rem; font-weight: 700; }
+  .pracNote { max-width: 1000px; margin: 14px 0 0; color: var(--muted); font-size: 0.9rem; }
 
   /* ---------- Smal scherm (telefoon): geen linkerbalk ---------- */
   @media (max-width: 800px) {
     #main { margin-left: 0; margin-right: 0; min-height: 0; padding: 12px 14px; }
     #viewMe { margin-left: 0; min-height: 0; padding: 16px 14px; }
     .meBack { display: flex; }
+    #viewPractice { margin-left: 0; min-height: 0; padding: 16px 14px; }
+    .pracTabs button { padding: 8px 12px; font-size: 0.82rem; }
     .menuBtn { display: flex; }
     /* de linkerbalk schuift op een smal scherm van links in beeld als je op de drie streepjes drukt */
     #sideLeft { width: min(78vw, 280px); z-index: 60; background-color: var(--bg); background-image: linear-gradient(var(--side-bg), var(--side-bg));
@@ -378,30 +390,35 @@
         <button type="button" id="meLogout" class="meSubmit meOut">Uitloggen</button>
       </div>
     </div>
-    <div class="myStatsCard" aria-label="Jouw statistieken">
-      <h3>Jouw statistieken</h3>
-      <div class="myStatsGrid">
-        <div class="myStat"><div class="myStatLabel">Aantal solves</div><div class="myStatValue" id="meStatSolves">0</div></div>
-        <div class="myStat"><div class="myStatLabel">Beste tijd</div><div class="myStatValue" id="meStatBest">-</div></div>
-        <div class="myStat"><div class="myStatLabel">Beste Ao5</div><div class="myStatValue" id="meStatAo5">-</div></div>
-        <div class="myStat"><div class="myStatLabel">Beste Ao12</div><div class="myStatValue" id="meStatAo12">-</div></div>
+
+    <div class="meStats">
+      <h3>jouw statistieken</h3>
+      <div class="msTabs" id="msTabs"></div>
+      <div class="msRow"><span>Aantal solves</span><b id="msSolves">0</b></div>
+      <div class="msRow"><span>Beste tijd</span><b id="msBest">-</b></div>
+      <div class="msRow"><span>Beste Ao5</span><b id="msAo5">-</b></div>
+      <div class="msRow"><span>Beste Ao12</span><b id="msAo12">-</b></div>
+    </div>
+  </section>
+
+  <section id="viewPractice" aria-label="Oefenen">
+    <button id="pracBack" class="meBack" aria-label="Terug naar het menu" title="Terug naar het menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Menu</span>
+    </button>
+    <div class="pracCard">
+      <div class="pracRow1">
+        <div class="pracTabs" id="pracTabs" role="tablist" aria-label="Kies een set"></div>
+        <div class="pracStatus" id="pracStatus"></div>
+      </div>
+      <div class="pracRow2">
+        <span class="pracLabel">OEFEN</span>
+        <button id="chipUnlearned" class="chip on" aria-pressed="true"><span class="box"></span>Ongeleerd</button>
+        <button id="chipLearned" class="chip on" aria-pressed="true"><span class="box"></span>Geleerd</button>
+        <span class="pracCount" id="pracCount"></span>
       </div>
     </div>
-    <div class="yourWeekBar">
-      <h3>Your week</h3>
-      <button type="button" class="yourWeekOpen" id="yourWeekOpen" aria-expanded="false" aria-controls="yourWeekCard">Open</button>
-    </div>
-    <div class="yourWeekCard" id="yourWeekCard" hidden>
-      <h3 class="yourWeekDate" id="yourWeekDate">Deze week</h3>
-      <div class="yourWeekGrid">
-        <div class="yourWeekStat"><div class="myStatLabel">Aantal solves</div><div class="myStatValue" id="weekSolves">0</div></div>
-        <div class="yourWeekStat"><div class="myStatLabel">Gemiddelde</div><div class="myStatValue" id="weekAverage">-</div></div>
-        <div class="yourWeekStat"><div class="myStatLabel">Beste tijd</div><div class="myStatValue" id="weekBest">-</div></div>
-        <div class="yourWeekStat"><div class="myStatLabel">Persoonlijk record verbroken</div><div class="myStatValue" id="weekRecords">0</div></div>
-        <div class="yourWeekStat"><div class="myStatLabel">Beste Ao5</div><div class="myStatValue" id="weekAo5">-</div></div>
-        <div class="yourWeekStat"><div class="myStatLabel">Beste Ao12</div><div class="myStatValue" id="weekAo12">-</div></div>
-      </div>
-    </div>
+    <p class="pracNote">Hier komen straks de cases om te oefenen.</p>
   </section>
 
   <aside id="sideLeft" aria-label="Menu">
@@ -411,6 +428,7 @@
     </button>
     <nav id="sideNav">
       <button id="navTimer" class="navItem active" data-view="timer">Timer</button>
+      <button id="navPractice" class="navItem" data-view="practice">Oefenen</button>
     </nav>
     <button id="meBtn" class="meBtn" title="Jij: account aanmaken of inloggen" aria-label="Jij: account aanmaken of inloggen">
       <svg class="man manSmall" viewBox="0 0 48 60" width="34" height="42" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g class="bob"><g class="legL"><rect x="17.5" y="42" width="5" height="14" rx="2.5" fill="#0b2a78"/></g><g class="legR"><rect x="25.5" y="42" width="5" height="14" rx="2.5" fill="#0b2a78"/></g><rect x="8" y="27" width="5" height="15" rx="2.5" fill="#ffd7a8" transform="rotate(12 10.5 29)"/><rect x="14" y="24" width="20" height="20" rx="7" fill="#ff7eb9"/><g class="armR"><rect x="34" y="13" width="5" height="17" rx="2.5" fill="#ffd7a8"/></g><circle cx="24" cy="13" r="10" fill="#ffd7a8"/><path d="M14.200 11.500c0-6.200 4.200-9.500 9.800-9.500s9.800 3.300 9.800 9.500c-3-3.200-7-4.200-9.800-4.200s-6.800 1-9.800 4.200z" fill="#2b1b0e"/><circle class="eyeL" cx="20.500" cy="14" r="1.400" fill="#1a1a1a"/><circle class="eyeR" cx="27.500" cy="14" r="1.400" fill="#1a1a1a"/><path d="M20.500 18.300q3.500 3 7 0" fill="none" stroke="#1a1a1a" stroke-width="1.300" stroke-linecap="round"/></g></svg>
@@ -477,13 +495,21 @@
   const tabLogin = document.getElementById("tabLogin");
   const tabSignup = document.getElementById("tabSignup");
   const meLogout = document.getElementById("meLogout");
-  const meStatSolves = document.getElementById("meStatSolves");
-  const meStatBest = document.getElementById("meStatBest");
-  const meStatAo5 = document.getElementById("meStatAo5");
-  const meStatAo12 = document.getElementById("meStatAo12");
   const menuBtn = document.getElementById("menuBtn");
   const menuBackdrop = document.getElementById("menuBackdrop");
   const meBack = document.getElementById("meBack");
+  const navPractice = document.getElementById("navPractice");
+  const pracBack = document.getElementById("pracBack");
+  const msTabs = document.getElementById("msTabs");
+  const msSolves = document.getElementById("msSolves");
+  const msBest = document.getElementById("msBest");
+  const msAo5 = document.getElementById("msAo5");
+  const msAo12 = document.getElementById("msAo12");
+  const pracTabs = document.getElementById("pracTabs");
+  const pracStatus = document.getElementById("pracStatus");
+  const pracCount = document.getElementById("pracCount");
+  const chipUnlearned = document.getElementById("chipUnlearned");
+  const chipLearned = document.getElementById("chipLearned");
   const root = document.documentElement;
 
   // ---------- Opslag (veilig, werkt ook als opslag geblokkeerd is) ----------
@@ -1177,14 +1203,15 @@
 
   // Gemiddelde van n solves die eindigen op index "end": de beste en slechtste vallen weg
   // (1 bij Ao5 en Ao12). Te veel DNF's: het resultaat is DNF. Geeft null als er te weinig solves zijn.
-  function aoAt(end, n) {
+  function aoOfList(list, end, n) {
     if (end < n - 1) return null;
     const drop = Math.ceil(n * 0.05);
-    const vals = solves.slice(end - n + 1, end + 1).map(eff).sort((a, b) => a - b);
+    const vals = list.slice(end - n + 1, end + 1).map(eff).sort((a, b) => a - b);
     const kept = vals.slice(drop, n - drop);
     if (kept.some(v => v === Infinity)) return Infinity;
     return kept.reduce((a, b) => a + b, 0) / kept.length;
   }
+  function aoAt(end, n) { return aoOfList(solves, end, n); }
   const ao5At = end => aoAt(end, 5);
 
   function mkBtn(text, action, index, on, title) {
@@ -1422,7 +1449,7 @@
     inspectStart = null;
     state = "idle";
     timeEl.className = "";
-    const dnfSolve = { ms: 0, plus2: false, dnf: true, scramble: currentScramble, timestamp: Date.now() };
+    const dnfSolve = { ms: 0, plus2: false, dnf: true, scramble: currentScramble };
     solves.push(dnfSolve);
     saveSolves();
     dailyFinish(dnfSolve);
@@ -1446,7 +1473,7 @@
   function stopSolve() {
     cancelAnimationFrame(raf);
     const t = performance.now() - startTime;
-    const solve = { ms: t, plus2: penalty > 0, dnf: false, scramble: currentScramble, timestamp: Date.now() };
+    const solve = { ms: t, plus2: penalty > 0, dnf: false, scramble: currentScramble };
     solves.push(solve);
     saveSolves();
     dailyFinish(solve);
@@ -1458,6 +1485,7 @@
   }
 
   function press() {
+    if (view !== "timer") return; // alleen op de timer-pagina
     if (state === "running") {
       stopSolve();
     } else if (state === "idle") {
@@ -1670,7 +1698,7 @@
   // ONLINE (echt uniek voor iedereen) via Supabase: vul hieronder de gegevens van je project in (zie SETUP-ACCOUNTS.md).
   // De "anon"-sleutel is bedoeld om openbaar te zijn. Zet hier NOOIT de "service_role"-sleutel neer.
   // Zolang hier niets staat, werkt het account alleen in deze browser (lokale modus).
-  const ACCOUNT_CONFIG = { url: "", anonKey: "" };
+  const ACCOUNT_CONFIG = { url: "https://kkwmarhjtsfbepgtxrfh.supabase.co", anonKey: "sb_publishable_u4ojPShPHhK4-z4nTDSVFw_DJKpo3WC" };
   const wantsOnline = () => !!(ACCOUNT_CONFIG.url && ACCOUNT_CONFIG.anonKey);
   // Maakt van de ingevulde URL altijd de kale vorm https://project.supabase.co (zonder / of pad erachter, zonder spaties)
   function cleanSupabaseUrl(u) {
@@ -1857,78 +1885,7 @@
     setMsg("", "");
   }
 
-  function renderMeStats() {
-    const finite = solves.map(eff).filter(v => v !== Infinity);
-    const bestTime = finite.length ? fmt(Math.min(...finite)) : "-";
-    const bestAo = n => {
-      let best = null;
-      for (let i = n - 1; i < solves.length; i++) {
-        const value = aoAt(i, n);
-        if (value !== null && (best === null || value < best)) best = value;
-      }
-      return best === null ? "-" : fmtVal(best);
-    };
-    meStatSolves.textContent = String(solves.length);
-    meStatBest.textContent = bestTime;
-    meStatAo5.textContent = bestAo(5);
-    meStatAo12.textContent = bestAo(12);
-
-    // Week loopt van maandag 00:00 tot zondag 23:59 (lokale tijd).
-    const now = new Date();
-    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
-    const nextMonday = new Date(monday);
-    nextMonday.setDate(nextMonday.getDate() + 7);
-    const weekSolves = solves.filter(s => Number.isFinite(s.timestamp) && s.timestamp >= monday.getTime() && s.timestamp < nextMonday.getTime());
-    const dateFmt = new Intl.DateTimeFormat("nl-BE", { day: "numeric", month: "short" });
-    const sunday = new Date(nextMonday.getTime() - 1);
-    document.getElementById("yourWeekDate").textContent = dateFmt.format(monday) + " – " + dateFmt.format(sunday);
-
-    const weekFinite = weekSolves.map(eff).filter(v => v !== Infinity);
-    const weekAverage = weekFinite.length ? weekFinite.reduce((a, b) => a + b, 0) / weekFinite.length : null;
-    const weekBest = weekFinite.length ? Math.min(...weekFinite) : null;
-    const weekAo = n => {
-      let best = null;
-      for (let i = n - 1; i < weekSolves.length; i++) {
-        const vals = weekSolves.slice(i - n + 1, i + 1).map(eff).sort((a, b) => a - b);
-        const trim = Math.ceil(n * 0.05);
-        const kept = vals.slice(trim, n - trim);
-        const value = kept.some(v => v === Infinity) ? Infinity : kept.reduce((a, b) => a + b, 0) / kept.length;
-        if (best === null || value < best) best = value;
-      }
-      return best;
-    };
-
-    // Oude solves zonder datum tellen mee als bestaand PR, maar kunnen niet aan een week worden toegewezen.
-    let record = solves.filter(s => !Number.isFinite(s.timestamp)).map(eff).filter(v => v !== Infinity)
-      .reduce((best, value) => Math.min(best, value), Infinity);
-    let recordsThisWeek = 0;
-    solves.filter(s => Number.isFinite(s.timestamp)).slice().sort((a, b) => a.timestamp - b.timestamp).forEach(s => {
-      const value = eff(s);
-      if (value !== Infinity && value < record) {
-        record = value;
-        if (s.timestamp >= monday.getTime() && s.timestamp < nextMonday.getTime()) recordsThisWeek++;
-      }
-    });
-
-    document.getElementById("weekSolves").textContent = String(weekSolves.length);
-    document.getElementById("weekAverage").textContent = weekAverage === null ? "-" : fmt(weekAverage);
-    document.getElementById("weekBest").textContent = weekBest === null ? "-" : fmt(weekBest);
-    document.getElementById("weekRecords").textContent = String(recordsThisWeek);
-    document.getElementById("weekAo5").textContent = weekAo(5) === null ? "-" : fmtVal(weekAo(5));
-    document.getElementById("weekAo12").textContent = weekAo(12) === null ? "-" : fmtVal(weekAo(12));
-  }
-
-  document.getElementById("yourWeekOpen").addEventListener("click", () => {
-    const card = document.getElementById("yourWeekCard");
-    const button = document.getElementById("yourWeekOpen");
-    card.hidden = !card.hidden;
-    button.textContent = card.hidden ? "Open" : "Sluiten";
-    button.setAttribute("aria-expanded", String(!card.hidden));
-  });
-
   function renderMe() {
-    renderMeStats();
     const u = currentUser();
     meGuest.style.display = u ? "none" : "";
     meUserBox.style.display = u ? "" : "none";
@@ -1998,8 +1955,10 @@
     view = v;
     document.body.dataset.view = v;
     navTimer.className = v === "timer" ? "navItem active" : "navItem";
+    navPractice.className = v === "practice" ? "navItem active" : "navItem";
     meBtn.className = v === "me" ? "meBtn active" : "meBtn";
-    if (v === "me") renderMe();
+    if (v === "me") { msPuzzle = null; renderMe(); renderMyStats(); }
+    if (v === "practice") renderPractice();
     if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -2036,6 +1995,91 @@
   }
   brandBtn.addEventListener("click", goHome);
   navTimer.addEventListener("click", goHome);
+
+  // ---------- Jouw statistieken (op de Jij-pagina) ----------
+  let msPuzzle = null; // van welke puzzel je de statistieken ziet (standaard: de puzzel die je nu gebruikt)
+  function bestAoText(list, n) {
+    let b = null;
+    for (let i = n - 1; i < list.length; i++) {
+      const a = aoOfList(list, i, n);
+      if (b === null || a < b) b = a;
+    }
+    return b === null ? "-" : (b === Infinity ? "DNF" : fmt(b) + " s");
+  }
+  function renderMyStats() {
+    const key = msPuzzle && PUZZLES[msPuzzle] ? msPuzzle : puzzle;
+    msTabs.innerHTML = "";
+    Object.keys(PUZZLES).forEach(k => {
+      const b = document.createElement("button");
+      b.textContent = PUZZLES[k].short;
+      b.dataset.puzzle = k;
+      if (k === key) b.className = "on";
+      msTabs.appendChild(b);
+    });
+    const list = key === puzzle ? solves : loadSolves(key);
+    const finite = list.map(eff).filter(v => v !== Infinity);
+    msSolves.textContent = String(list.length);
+    msBest.textContent = finite.length ? fmt(Math.min.apply(null, finite)) + " s" : "-";
+    msAo5.textContent = bestAoText(list, 5);
+    msAo12.textContent = bestAoText(list, 12);
+  }
+  msTabs.addEventListener("click", e => {
+    const b = e.target.closest ? e.target.closest("button") : null;
+    if (b && b.dataset.puzzle) { msPuzzle = b.dataset.puzzle; renderMyStats(); }
+  });
+
+  // ---------- Oefenen ----------
+  // Aantal cases per set (Advanced F2L: aantal nog niet ingevuld). De cases zelf komen later.
+  const PRACTICE_SETS = [
+    { key: "PLL", label: "PLL", total: 21 },
+    { key: "OLL", label: "OLL", total: 57 },
+    { key: "F2L", label: "F2L", total: 41 },
+    { key: "AF2L", label: "Advanced F2L", total: null },
+    { key: "COLL", label: "COLL", total: 40 },
+    { key: "ZBLL", label: "ZBLL", total: 493 }
+  ];
+  let prac = Object.assign({ set: "PLL", unlearned: true, learned: true }, load("practice", {}));
+  if (!PRACTICE_SETS.some(x => x.key === prac.set)) prac.set = "PLL";
+  const learnedCount = key => { const l = load("learned_" + key, []); return Array.isArray(l) ? l.length : 0; };
+
+  function renderPractice() {
+    pracTabs.innerHTML = "";
+    PRACTICE_SETS.forEach(x => {
+      const b = document.createElement("button");
+      b.textContent = x.label;
+      b.dataset.set = x.key;
+      if (x.key === prac.set) b.className = "on";
+      pracTabs.appendChild(b);
+    });
+    const cur = PRACTICE_SETS.find(x => x.key === prac.set);
+    const learned = learnedCount(cur.key);
+    chipUnlearned.className = "chip" + (prac.unlearned ? " on" : "");
+    chipLearned.className = "chip" + (prac.learned ? " on" : "");
+    chipUnlearned.setAttribute("aria-pressed", String(!!prac.unlearned));
+    chipLearned.setAttribute("aria-pressed", String(!!prac.learned));
+    pracStatus.textContent = learned + " geleerd";
+    if (cur.total === null) {
+      pracCount.textContent = "\u2013 cases";
+    } else {
+      const n = (prac.unlearned ? Math.max(0, cur.total - learned) : 0) + (prac.learned ? Math.min(learned, cur.total) : 0);
+      pracCount.textContent = n + (n === 1 ? " case" : " cases");
+    }
+  }
+  pracTabs.addEventListener("click", e => {
+    const b = e.target.closest ? e.target.closest("button") : null;
+    if (b && b.dataset.set) { prac.set = b.dataset.set; save("practice", prac); renderPractice(); }
+  });
+  chipUnlearned.addEventListener("click", e => { prac.unlearned = !prac.unlearned; save("practice", prac); renderPractice(); e.currentTarget.blur(); });
+  chipLearned.addEventListener("click", e => { prac.learned = !prac.learned; save("practice", prac); renderPractice(); e.currentTarget.blur(); });
+  navPractice.addEventListener("click", e => {
+    setMenu(false);
+    showView("practice", true);
+    e.currentTarget.blur();
+  });
+  pracBack.addEventListener("click", e => { // pijl (gsm): terug naar de balk links
+    setMenu(true);
+    e.currentTarget.blur();
+  });
   meBtn.addEventListener("click", goMe);
 
   // ---------- Start ----------
