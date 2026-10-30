@@ -197,6 +197,17 @@
   .meWelcome { font-size: 1.05rem; margin: 6px 0; text-align: center; }
   #meUserBox .meNote { text-align: center; margin-bottom: 14px; }
 
+  /* Persoonlijke statistieken op de Jij-pagina */
+  .myStatsCard { max-width: 620px; margin: 16px auto 0; padding: 20px; border-radius: 16px;
+                 background: #ffffff; color: #17213a; text-align: left; }
+  .myStatsCard h3 { margin: 0 0 16px; font-size: 1.15rem; font-weight: 800; }
+  .myStatsGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .myStat { min-width: 0; padding: 12px; border-radius: 11px; background: #f1f4fa; }
+  .myStatLabel { color: #667085; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+  .myStatValue { margin-top: 5px; font-family: var(--mono); font-size: 1.25rem; font-weight: 800;
+                 font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  @media (max-width: 420px) { .myStatsCard { padding: 16px; } .myStatsGrid { gap: 9px; } .myStat { padding: 10px; } }
+
   .meNote.warn { background: rgba(255, 126, 185, 0.15); border: 1px solid rgba(255, 126, 185, 0.55); border-radius: 10px; padding: 10px 12px; color: var(--text); line-height: 1.4; }
   .meHint { font-size: 0.72rem; margin: -4px 0 10px; min-height: 1em; color: var(--muted); }
   .meHint.ok { color: var(--ready); }
@@ -355,6 +366,15 @@
         <button type="button" id="meLogout" class="meSubmit meOut">Uitloggen</button>
       </div>
     </div>
+    <div class="myStatsCard" aria-label="Jouw statistieken">
+      <h3>Jouw statistieken</h3>
+      <div class="myStatsGrid">
+        <div class="myStat"><div class="myStatLabel">Aantal solves</div><div class="myStatValue" id="meStatSolves">0</div></div>
+        <div class="myStat"><div class="myStatLabel">Beste tijd</div><div class="myStatValue" id="meStatBest">-</div></div>
+        <div class="myStat"><div class="myStatLabel">Beste Ao5</div><div class="myStatValue" id="meStatAo5">-</div></div>
+        <div class="myStat"><div class="myStatLabel">Beste Ao12</div><div class="myStatValue" id="meStatAo12">-</div></div>
+      </div>
+    </div>
   </section>
 
   <aside id="sideLeft" aria-label="Menu">
@@ -430,6 +450,10 @@
   const tabLogin = document.getElementById("tabLogin");
   const tabSignup = document.getElementById("tabSignup");
   const meLogout = document.getElementById("meLogout");
+  const meStatSolves = document.getElementById("meStatSolves");
+  const meStatBest = document.getElementById("meStatBest");
+  const meStatAo5 = document.getElementById("meStatAo5");
+  const meStatAo12 = document.getElementById("meStatAo12");
   const menuBtn = document.getElementById("menuBtn");
   const menuBackdrop = document.getElementById("menuBackdrop");
   const meBack = document.getElementById("meBack");
@@ -1806,7 +1830,25 @@
     setMsg("", "");
   }
 
+  function renderMeStats() {
+    const finite = solves.map(eff).filter(v => v !== Infinity);
+    const bestTime = finite.length ? fmt(Math.min(...finite)) : "-";
+    const bestAo = n => {
+      let best = null;
+      for (let i = n - 1; i < solves.length; i++) {
+        const value = aoAt(i, n);
+        if (value !== null && (best === null || value < best)) best = value;
+      }
+      return best === null ? "-" : fmtVal(best);
+    };
+    meStatSolves.textContent = String(solves.length);
+    meStatBest.textContent = bestTime;
+    meStatAo5.textContent = bestAo(5);
+    meStatAo12.textContent = bestAo(12);
+  }
+
   function renderMe() {
+    renderMeStats();
     const u = currentUser();
     meGuest.style.display = u ? "none" : "";
     meUserBox.style.display = u ? "" : "none";
